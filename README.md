@@ -1,8 +1,12 @@
-**[繁體中文](#zh-hant)**  ·  **[English](#en)**
+<p align="center">
+  <a href="#zh-hant"><strong>繁體中文</strong></a>
+  &nbsp;·&nbsp;
+  <a href="#en"><strong>English</strong></a>
+</p>
 
 ---
 
-
+<a id="zh-hant"></a>
 
 # Momaomao's Translation Forge
 
@@ -69,7 +73,7 @@ forge fix-src --source-mod "..\原版Mod" --target-mod "..\原版Mod-TC" --lang 
 
 ---
 
-
+<a id="en"></a>
 
 # Momaomao's Translation Forge
 
