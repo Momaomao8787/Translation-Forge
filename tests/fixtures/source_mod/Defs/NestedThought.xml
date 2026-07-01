@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ThoughtDef>
+    <defName>NestedThought</defName>
+    <stages>
+      <li>
+        <label>soaking wet</label>
+        <description>tail is heavy.</description>
+      </li>
+      <li>
+        <label>booty</label>
+        <description>spoils of war.</description>
+      </li>
+    </stages>
+  </ThoughtDef>
+</Defs>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ThingDef>
+    <defName>NestedBeacon</defName>
+    <label>Beacon</label>
+    <comps>
+      <li Class="CompProperties_Refuelable">
+        <compClass>CompRefuelable</compClass>
+        <fuelGizmoLabel>Wood left</fuelGizmoLabel>
+        <fuelLabel>Wood left</fuelLabel>
+        <outOfFuelMessage>Needs wood</outOfFuelMessage>
+      </li>
+    </comps>
+  </ThingDef>
+</Defs>

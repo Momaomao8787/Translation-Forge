@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rimworld-definject-translator"
+version = "0.7.4"
+description = "Momaomao's Translation Forge — RimWorld mod localization scaffold and DefInjected workflow"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "flet>=0.24.0",
+]
+
+[project.scripts]
+forge = "core.cli:main"
+forge-ui = "ui.main:launch"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+build = ["pyinstaller>=6.0", "flet-cli>=0.24.0"]
+
+[tool.setuptools.packages.find]
+include = ["core*", "ui*"]
+
+[tool.setuptools.package-data]
+"ui.i18n" = ["locales/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

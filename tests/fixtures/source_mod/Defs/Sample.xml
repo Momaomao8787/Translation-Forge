@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ThingDef>
+    <defName>SampleThing</defName>
+    <label>Sample Thing</label>
+    <description>A sample item.</description>
+  </ThingDef>
+  <ResearchProjectDef>
+    <defName>SampleResearch</defName>
+    <label>Sample Research</label>
+    <description>Research text.</description>
+  </ResearchProjectDef>
+</Defs>
