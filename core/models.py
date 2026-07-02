@@ -119,6 +119,8 @@ class CheckResult:
     lang_path: str = ""
     lang_will_create: bool = False
     pending_count: int = 0
+    def_record_count: int = 0
+    har_skipped_count: int = 0
     duplicate_def_names: list[str] = field(default_factory=list)
     leaf_collisions: list[str] = field(default_factory=list)
     duplicate_tags: list[str] = field(default_factory=list)
@@ -138,6 +140,8 @@ class ExportResult:
     output_path: str = ""
     entry_count: int = 0
     meta_path: str = ""
+    messages: list[str] = field(default_factory=list)
+    message_keys: list[tuple[str, dict]] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     warning_keys: list[tuple[str, dict]] = field(default_factory=list)
     error: str = ""
@@ -151,7 +155,7 @@ class ExportOptions:
     placeholder: str = EXPORT_PLACEHOLDER_TODO
     write_mode: str = WRITE_MODE_MERGE_EXISTING
     prefix: str = ""
-    fmt: str = "csv"
+    fmt: str = "xml"
 
 
 @dataclass
@@ -204,6 +208,7 @@ class ImportResult:
     updated: int = 0
     files_created: int = 0
     target_lang_path: str = ""
+    har_blocked: int = 0
     warnings: list[str] = field(default_factory=list)
     error: str = ""
     error_key: str | None = None

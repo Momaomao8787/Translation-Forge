@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from core.field_path import slug_segment
+from core.list_segment import for_list_item
 from core.models import DEFAULT_FIELDS
 
 TRANSLATABLE_LEAF_TAGS = frozenset(
@@ -31,26 +31,13 @@ def _local_tag(elem: ET.Element) -> str:
     return str(tag)
 
 
-def _li_segment(li: ET.Element) -> str | None:
-    vc = li.find("verbClass")
-    if vc is not None and (vc.text or "").strip():
-        return vc.text.strip()
-    cc = li.find("compClass")
-    if cc is not None and (cc.text or "").strip():
-        return cc.text.strip()
-    for key in ("customLabel", "def", "label"):
-        el = li.find(key)
-        if el is not None and (el.text or "").strip():
-            return slug_segment(el.text)
-    return None
-
-
 def _is_leaf_element(elem: ET.Element) -> bool:
     return not any(isinstance(child.tag, str) for child in elem)
 
 
 def collect_fields(def_node: ET.Element) -> dict[str, str]:
     fields: dict[str, str] = {}
+    def_type = _local_tag(def_node)
 
     def add_path(path_parts: list[str], elem: ET.Element) -> None:
         path = ".".join(path_parts)
@@ -68,7 +55,8 @@ def collect_fields(def_node: ET.Element) -> dict[str, str]:
                 continue
 
             if tag == "li":
-                seg = _li_segment(child)
+                siblings = [c for c in container if _local_tag(c) == "li"]
+                seg = for_list_item(child, path_parts, def_type, siblings)
                 if seg is None:
                     seg = str(li_index)
                 li_index += 1

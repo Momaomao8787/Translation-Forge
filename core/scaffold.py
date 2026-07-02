@@ -35,7 +35,7 @@ def run_scaffold(config: ProjectConfig, options: ScaffoldOptions, app_title: str
             result.error = zh_fallback("err.defs_not_found")
             return result
 
-        pending, _, duplicate, collisions, _ = scan_pending(config)
+        pending, _, duplicate, collisions, _, _ = scan_pending(config)
         if duplicate:
             result.warnings.append(zh_fallback("msg.scaffold.duplicate_warning", count=len(duplicate)))
         if collisions:

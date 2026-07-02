@@ -4,10 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from core.about_template import default_package_id, read_source_about
+from core.about_template import default_description, default_package_id, read_source_about
 from core.models import ProjectConfig, ScaffoldOptions
 from core.path_suggest import (
     default_rimworld_mods_dir,
+    default_user_mods_dir,
     lang_package_suffix,
     suggest_folder_name,
     suggest_target_mod_path,
@@ -32,27 +33,27 @@ def test_suggest_folder_name_strips_suffix(tmp_path: Path):
 <ModMetaData><name>Monolyn Race</name><packageId>ASEL.MonolynRace</packageId></ModMetaData>""",
         encoding="utf-8",
     )
-    assert suggest_folder_name(source, "ChineseTraditional") == "Monolyn Race-TC"
+    assert suggest_folder_name(source, "ChineseTraditional") == "Monolyn Race TC"
 
 
 def test_suggest_target_collision(tmp_path: Path, monkeypatch):
+    user_mods = tmp_path / "Rimworld Mod"
+    user_mods.mkdir()
     monkeypatch.setattr(
-        "core.path_suggest.default_rimworld_mods_dir",
-        lambda: None,
+        "core.path_suggest.default_user_mods_dir",
+        lambda *, create=True: user_mods,
     )
-    mods = tmp_path / "Mods"
-    mods.mkdir()
-    source = mods / "source"
+    source = tmp_path / "source"
     source.mkdir()
     (source / "About").mkdir()
     (source / "About" / "About.xml").write_text(
         "<ModMetaData><name>Demo</name><packageId>Demo.Mod</packageId></ModMetaData>",
         encoding="utf-8",
     )
-    (mods / "Demo-TC").mkdir()
+    (user_mods / "Demo TC").mkdir()
     path, name = suggest_target_mod_path(source, "ChineseTraditional")
-    assert path.parent == mods
-    assert name == "Demo-TC-2"
+    assert path.parent == user_mods
+    assert name == "Demo TC-2"
 
 
 def test_validate_scaffold_target_blocks_same_path(tmp_path: Path):
@@ -66,10 +67,70 @@ def test_default_package_id(tmp_path: Path):
     source.mkdir()
     (source / "About").mkdir()
     (source / "About" / "About.xml").write_text(
-        "<ModMetaData><packageId>ASEL.MonolynRace</packageId></ModMetaData>",
+        "<ModMetaData><name>Monolyn Race</name><packageId>ASEL.MonolynRace</packageId></ModMetaData>",
         encoding="utf-8",
     )
-    assert default_package_id(source, "ChineseTraditional") == "ASEL.MonolynRace.TC"
+    assert default_package_id(source, "ChineseTraditional") == "MonolynRace.TC"
+
+
+def test_default_package_id_from_long_title(tmp_path: Path):
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "About").mkdir()
+    (source / "About" / "About.xml").write_text(
+        """<ModMetaData>
+<name>Kurin, The Three Tailed Fox [Deluxe Edition]</name>
+<packageId>Inoshishi3.KTTFDE</packageId>
+</ModMetaData>""",
+        encoding="utf-8",
+    )
+    assert default_package_id(source, "ChineseTraditional") == "KurinTheThreeTailedFoxDeluxeEdition.TC"
+    assert default_package_id(source, "ChineseSimplified") == "KurinTheThreeTailedFoxDeluxeEdition.ZH"
+
+
+def test_default_package_id_ignores_source_pid(tmp_path: Path):
+    source = tmp_path / "Ratkin Underground+"
+    source.mkdir()
+    (source / "About").mkdir()
+    (source / "About" / "About.xml").write_text(
+        """<ModMetaData>
+<name>Ratkin Underground+</name>
+<packageId>RKU.RatkinUnderground</packageId>
+</ModMetaData>""",
+        encoding="utf-8",
+    )
+    assert default_package_id(source, "ChineseTraditional") == "RatkinUnderground.TC"
+
+
+def test_default_package_id_invalid_suffix_override_falls_back_to_lang(tmp_path: Path):
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "About").mkdir()
+    (source / "About" / "About.xml").write_text(
+        "<ModMetaData><name>Kurin Fox</name></ModMetaData>",
+        encoding="utf-8",
+    )
+    assert default_package_id(source, "ChineseTraditional", ".") == "KurinFox.TC"
+
+
+def test_default_description():
+    assert default_description("ChineseTraditional") == "本模組使用「魔貓貓的翻譯鍛造台」協助完成"
+    assert default_description("ChineseSimplified") == "本模组使用「魔猫猫的翻译锻造台」协助完成"
+    assert default_description("English") == "This mod was created with Momaomao's Translation Forge"
+    assert "この Mod は" in default_description("Japanese")
+
+
+def test_scaffold_about_description_localized(tmp_path: Path):
+    source = tmp_path / "source_mod"
+    target = tmp_path / "target_mod"
+    import shutil
+
+    shutil.copytree(FIXTURES / "source_mod", source)
+    config = ProjectConfig(source, target, "Japanese")
+    result = run_scaffold(config, ScaffoldOptions(create_about=True))
+    assert result.ok
+    about_text = (target / "About" / "About.xml").read_text(encoding="utf-8")
+    assert default_description("Japanese") in about_text
 
 
 def test_scaffold_run_creates_about_and_dirs(tmp_path: Path):
@@ -82,7 +143,9 @@ def test_scaffold_run_creates_about_and_dirs(tmp_path: Path):
     options = ScaffoldOptions(create_about=True)
     result = run_scaffold(config, options, app_title="Momaomao's Translation Forge")
     assert result.ok
-    assert (target / "About" / "About.xml").is_file()
+    about_path = target / "About" / "About.xml"
+    assert about_path.is_file()
+    assert default_description("ChineseTraditional") in about_path.read_text(encoding="utf-8")
     assert (target / "Languages" / "ChineseTraditional" / "DefInjected").is_dir()
     assert result.entries_written == 0
 
@@ -99,6 +162,15 @@ def test_scaffold_warns_existing_lang(tmp_path: Path):
     result = run_scaffold(config, ScaffoldOptions(create_about=False))
     assert result.ok
     assert any("existing_lang" in key for key, _ in result.warning_keys)
+
+
+def test_default_user_mods_dir_creates_folder(tmp_path: Path, monkeypatch):
+    docs = tmp_path / "Documents"
+    docs.mkdir()
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    root = default_user_mods_dir()
+    assert root == docs / "Rimworld Mod"
+    assert root.is_dir()
 
 
 def test_default_rimworld_mods_dir_prefers_steam_path(monkeypatch, tmp_path: Path):

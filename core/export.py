@@ -11,7 +11,7 @@ from core.definjected_write import (
     resolve_target,
     update_tag,
 )
-from core.errors import LocalizedError, add_result_warning, set_result_error, zh_fallback
+from core.errors import LocalizedError, add_result_message, add_result_warning, set_result_error, zh_fallback
 from core.export_merge import (
     default_single_pending_path,
     merge_pending_entries,
@@ -29,6 +29,7 @@ from core.models import (
     WRITE_MODE_MERGE_EXISTING,
     WRITE_MODE_NEW_FILE,
 )
+from core.har_field_rules import should_skip_from_pending
 from core.paths import definjected_root, normalize_path, resolve_mod_path
 from core.prefix import default_prefix
 from core.scan import scan_pending
@@ -179,13 +180,13 @@ def run_export(
 ) -> ExportResult:
     result = ExportResult(ok=False)
     try:
-        fmt = (options.fmt or "csv").lower()
+        fmt = (options.fmt or "xml").lower()
         if fmt not in ("xml", "csv"):
             result.error_key = "err.invalid_format"
             result.error = zh_fallback("err.invalid_format")
             return result
 
-        pending, _, _, _, defs_roots = scan_pending(config)
+        pending, _, _, _, defs_roots, har_skipped = scan_pending(config)
         layout = options.layout or EXPORT_LAYOUT_SINGLE
 
         if layout == EXPORT_LAYOUT_BY_SOURCE:
@@ -197,6 +198,7 @@ def run_export(
         out = normalize_path(output_path) if output_path else default_single_pending_path(target_mod, fmt)
         old_entries = _load_old_pending(out, fmt)
         merged = merge_pending_entries(pending, old_entries, options.placeholder)
+        merged = [e for e in merged if not should_skip_from_pending(e.def_type, e.field)]
         _export_single_file(out, merged, fmt)
 
         meta = meta_path_for(out)
@@ -214,6 +216,9 @@ def run_export(
         result.output_path = str(out)
         result.meta_path = str(meta)
         result.entry_count = len(merged)
+        add_result_message(result, "msg.export.done", count=len(merged), path=str(out))
+        if har_skipped > 0:
+            add_result_message(result, "msg.export.har_skipped", count=har_skipped)
     except LocalizedError as e:
         set_result_error(result, e)
     except OSError as e:

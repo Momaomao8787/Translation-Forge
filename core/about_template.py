@@ -4,9 +4,15 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from xml.dom import minidom
 
-from core.meta import APP_DISPLAY_NAME
 from core.models import LANG_PACKAGE_SUFFIX
-from core.path_suggest import basename_for_source, lang_package_suffix, sanitize_basename
+from core.about_locales import default_about_description
+from core.path_suggest import (
+    basename_for_source,
+    lang_package_suffix,
+    sanitize_basename,
+    strip_known_suffixes,
+    suggest_package_id,
+)
 
 
 def _text(el: ET.Element | None) -> str:
@@ -61,24 +67,15 @@ def read_source_about(source_mod: Path) -> dict:
 
 
 def default_package_id(source_mod: Path, lang: str, suffix_override: str = "") -> str:
-    about = read_source_about(source_mod)
-    source_pid = about.get("packageId", "")
-    suffix = (suffix_override or lang_package_suffix(lang)).strip()
-    suffix = "".join(c for c in suffix if c.isalnum() or c == ".")
-    if source_pid:
-        base = source_pid.rstrip(".")
-        return f"{base}.{suffix}" if suffix else base
-    folder = sanitize_basename(source_mod.name)
-    return f"Unknown.{folder}.{suffix}" if suffix else f"Unknown.{folder}"
+    return suggest_package_id(source_mod, lang, suffix_override)
 
 
 def default_about_name(target_mod: Path) -> str:
     return target_mod.name
 
 
-def default_description(app_title: str | None = None) -> str:
-    title = (app_title or APP_DISPLAY_NAME).strip()
-    return f"本模組使用 {title} 完成"
+def default_description(lang: str = "ChineseTraditional", app_title: str | None = None) -> str:
+    return default_about_description(lang)
 
 
 def build_about_fields(
@@ -98,7 +95,7 @@ def build_about_fields(
     source_pid = about.get("packageId", "")
     name = (about_name or default_about_name(target_mod)).strip()
     pid = (package_id or default_package_id(source_mod, lang, package_id_suffix)).strip()
-    desc = (description or default_description(app_title)).strip()
+    desc = (description or default_description(lang, app_title)).strip()
     versions = list(supported_versions if supported_versions is not None else about.get("supportedVersions", []))
     la = list(load_after if load_after is not None else [])
     if not la and source_pid:

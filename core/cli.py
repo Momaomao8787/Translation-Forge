@@ -26,7 +26,7 @@ from core.paths import validate_lang_name
 from core.prefix import default_prefix
 from core.scan import run_check
 from core.scaffold import run_scaffold
-from ui.i18n.detect import SUPPORTED_UI_LOCALES
+from core.ui_locales import SUPPORTED_UI_LOCALES
 from ui.i18n.translator import Translator
 
 APP_TITLE = "Momaomao's Translation Forge"
@@ -170,7 +170,7 @@ def main(argv: list[str] | None = None) -> int:
     p_export.add_argument("--target-mod", required=True)
     p_export.add_argument("--lang", required=True)
     p_export.add_argument("--output")
-    p_export.add_argument("--format", choices=["xml", "csv"], default="csv")
+    p_export.add_argument("--format", choices=["xml", "csv"], default="xml")
     p_export.add_argument(
         "--layout",
         choices=[EXPORT_LAYOUT_SINGLE, EXPORT_LAYOUT_BY_SOURCE],

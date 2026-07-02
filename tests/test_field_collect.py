@@ -31,5 +31,5 @@ def test_collect_nested_comp():
 
 def test_collect_thought_stages():
     fields = collect_fields(_load_def("NestedThought.xml", "NestedThought"))
-    assert fields["stages.soaking_wet.label"] == "soaking wet"
-    assert fields["stages.booty.description"] == "spoils of war."
+    assert fields["stages.0.label"] == "soaking wet"
+    assert fields["stages.1.description"] == "spoils of war."

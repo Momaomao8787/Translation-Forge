@@ -12,8 +12,9 @@ from core.definjected_write import (
     resolve_target,
     update_tag,
 )
-from core.errors import LocalizedError, set_result_error, zh_fallback
+from core.errors import LocalizedError, add_result_warning, set_result_error, zh_fallback
 from core.export_merge import default_single_pending_path
+from core.har_field_rules import should_block_import
 from core.meta import find_meta_for_input, meta_to_config, read_meta
 from core.models import (
     EXPORT_LAYOUT_BY_SOURCE,
@@ -115,7 +116,7 @@ def run_import(
             target_mod = resolve_mod_path(config.target_mod, "err.specify_target_mod")
             input_path = None
             meta = None
-            for ext in ("csv", "xml"):
+            for ext in ("xml", "csv"):
                 candidate = default_single_pending_path(target_mod, ext)
                 if candidate.is_file():
                     input_path = candidate
@@ -140,7 +141,7 @@ def run_import(
             return result
 
         project = meta_to_config(meta)
-        fmt = meta.get("format", "csv").lower()
+        fmt = meta.get("format", "xml").lower()
         use_pref, meta_prefix = _write_mode_from_meta(meta, write_mode, use_prefix)
         prefix = (prefix or meta_prefix or "").strip()
         if use_pref and not prefix:
@@ -158,6 +159,15 @@ def run_import(
 
         for entry in entries:
             if not is_translated(entry.translation):
+                result.skipped += 1
+                continue
+            if should_block_import(
+                entry.def_type,
+                entry.field,
+                entry.source_text,
+                entry.translation,
+            ):
+                result.har_blocked += 1
                 result.skipped += 1
                 continue
             if not entry.def_type or not entry.source_def_file:
@@ -200,6 +210,8 @@ def run_import(
                 indexes[def_type].refresh_file(path)
 
         result.files_created = len(created)
+        if result.har_blocked > 0:
+            add_result_warning(result, "msg.import.har_blocked", count=result.har_blocked)
         result.ok = True
     except LocalizedError as e:
         set_result_error(result, e)

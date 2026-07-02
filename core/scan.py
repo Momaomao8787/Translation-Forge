@@ -12,6 +12,7 @@ from core.check_quality import (
 from core.errors import LocalizedError, add_result_message, add_result_warning, set_result_error, zh_fallback
 from core.export_merge import default_single_pending_path
 from core.field_collect import collect_fields
+from core.har_field_rules import should_skip_from_pending
 from core.meta import find_meta_for_input, read_meta
 from core.models import DEFAULT_FIELDS, CheckResult, DefRecord, PendingEntry, ProjectConfig
 from core.paths import definjected_root, discover_defs_roots, lang_root, resolve_mod_path
@@ -143,7 +144,7 @@ def _warning_preview(items: list[str], limit: int = 2) -> str:
     return preview
 
 
-def scan_pending(config: ProjectConfig, allowed_fields: tuple[str, ...] = DEFAULT_FIELDS) -> tuple[list[PendingEntry], dict[tuple[str, str], DefRecord], list[str], list[str], list[Path]]:
+def scan_pending(config: ProjectConfig, allowed_fields: tuple[str, ...] = DEFAULT_FIELDS) -> tuple[list[PendingEntry], dict[tuple[str, str], DefRecord], list[str], list[str], list[Path], int]:
     source_mod = resolve_mod_path(config.source_mod, "err.specify_source_mod")
     target_mod = resolve_mod_path(config.target_mod, "err.specify_target_mod")
     defs_roots = discover_defs_roots(source_mod)
@@ -153,11 +154,15 @@ def scan_pending(config: ProjectConfig, allowed_fields: tuple[str, ...] = DEFAUL
     collisions = find_leaf_collisions(def_map)
 
     pending: list[PendingEntry] = []
+    har_skipped = 0
     restrict_top_level = allowed_fields != DEFAULT_FIELDS
     for rec in sorted(def_map.values(), key=lambda r: (r.def_type, r.def_name)):
         translated = tr_map.get(rec.def_name, set())
         keys = [f for f in allowed_fields if f in rec.fields] if restrict_top_level else sorted(rec.fields.keys())
         for field_name in keys:
+            if should_skip_from_pending(rec.def_type, field_name):
+                har_skipped += 1
+                continue
             if field_name in translated:
                 continue
             pending.append(
@@ -170,7 +175,7 @@ def scan_pending(config: ProjectConfig, allowed_fields: tuple[str, ...] = DEFAUL
                     source_def_file=rec.source_def_file,
                 )
             )
-    return pending, def_map, duplicate, collisions, defs_roots
+    return pending, def_map, duplicate, collisions, defs_roots, har_skipped
 
 
 def run_check(
@@ -200,7 +205,9 @@ def run_check(
         lr = lang_root(target_mod, config.target_lang)
         result.lang_path = str(lr)
         result.lang_will_create = not lr.is_dir()
-        pending, _, duplicate, collisions, _ = scan_pending(config)
+        pending, def_map, duplicate, collisions, defs_roots, har_skipped = scan_pending(config)
+        result.def_record_count = len(def_map)
+        result.har_skipped_count = har_skipped
         result.pending_count = len(pending)
         result.duplicate_def_names = duplicate
         result.leaf_collisions = collisions
@@ -208,7 +215,7 @@ def run_check(
         result.duplicate_tags = find_duplicate_tags(di_root)
         prefix = (import_prefix or "").strip()
         if not prefix:
-            for ext in ("csv", "xml"):
+            for ext in ("xml", "csv"):
                 candidate = default_single_pending_path(target_mod, ext)
                 if candidate.is_file():
                     try:
@@ -219,8 +226,12 @@ def run_check(
                     except (FileNotFoundError, OSError, ValueError):
                         pass
         result.write_strategy_mix = find_write_strategy_mix(di_root, prefix)
-        add_result_message(result, "msg.check.scanned_defs", count=len(defs_roots))
+        add_result_message(result, "msg.check.def_records", count=result.def_record_count)
         add_result_message(result, "msg.check.pending", count=len(pending))
+        if har_skipped > 0:
+            add_result_message(result, "msg.check.har_skipped", count=har_skipped)
+        if len(defs_roots) > 1:
+            add_result_message(result, "msg.check.defs_roots", count=len(defs_roots))
         if result.lang_will_create:
             add_result_message(result, "msg.check.lang_will_create", lang=config.target_lang)
         if duplicate:
@@ -247,7 +258,7 @@ def run_check(
             add_result_warning(result, "msg.check.pending_format_mix")
         if ui_import_mode:
             meta = None
-            for ext in ("csv", "xml"):
+            for ext in ("xml", "csv"):
                 candidate = default_single_pending_path(target_mod, ext)
                 if candidate.is_file():
                     try:

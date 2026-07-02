@@ -22,7 +22,10 @@ _ZH_FALLBACK: dict[str, str] = {
     "msg.scaffold.collision_warning": "警告：{count} 項檔名可能混淆",
     "msg.scaffold.existing_lang": "警告：已存在語言路徑 {path}，將僅補缺",
     "msg.check.scanned_defs": "已掃描 {count} 處 Defs",
+    "msg.check.def_records": "共掃描 {count} 個 Def",
     "msg.check.pending": "尚待翻譯 {count} 條",
+    "msg.check.har_skipped": "已略過 {count} 條 HAR 技術鍵（著色通道、附加部位識別碼等，勿翻譯）",
+    "msg.check.defs_roots": "Defs 根目錄 {count} 處",
     "msg.check.lang_will_create": "寫回時將建立 Languages/{lang}/",
     "msg.check.duplicate_warning": "警告：{count} 個同類型同名 Def 重複，匯出只保留先掃到的定義",
     "msg.check.collision_warning": "警告：{count} 項寫回檔名可能混淆（同一 DefType 內多個來源共用 leaf 檔名）",
@@ -33,6 +36,9 @@ _ZH_FALLBACK: dict[str, str] = {
     "msg.check.pending_format_mix": "警告：同時存在 CSV 與 XML 待譯檔，請勿混用格式",
     "msg.scaffold.existing_about": "警告：已存在 About.xml，建立時可能覆寫",
     "msg.export.bad_xml_skipped": "警告：略過無法讀取的 XML：{file}",
+    "msg.export.done": "已匯出 {count} 條至 {path}",
+    "msg.export.har_skipped": "已略過 {count} 條 HAR 技術鍵，未列入待譯檔",
+    "msg.import.har_blocked": "警告：略過 {count} 條 HAR 技術鍵譯文（須保留英文原值，否則附加貼圖可能失效）",
 }
 
 

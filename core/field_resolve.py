@@ -3,6 +3,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 from core.field_path import parse_field_path, slug_segment
+from core.list_segment import matches_thought_stage_handle
 from core.models import DefRecord
 
 _BACKSTORY_TYPES = frozenset({"BackstoryDef", "AlienRace.AlienBackstoryDef"})
@@ -29,6 +30,10 @@ def _find_li_by_segment(container: ET.Element, segment: str) -> ET.Element | Non
         if 0 <= idx < len(items):
             return items[idx]
         return None
+
+    for li in items:
+        if matches_thought_stage_handle(li, items, segment):
+            return li
 
     seg_slug = slug_segment(segment)
     for li in items:

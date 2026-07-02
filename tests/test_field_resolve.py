@@ -46,5 +46,5 @@ def test_resolve_comp_fields():
 
 def test_resolve_thought_stages():
     node = _load_def("NestedThought.xml", "NestedThought")
-    assert resolve_field_text(node, "stages.soaking_wet.label") == "soaking wet"
-    assert resolve_field_text(node, "stages.booty.description") == "spoils of war."
+    assert resolve_field_text(node, "stages.0.label") == "soaking wet"
+    assert resolve_field_text(node, "stages.1.description") == "spoils of war."

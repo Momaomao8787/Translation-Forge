@@ -45,7 +45,7 @@ forge-ui
 | ----- | ---------------- |
 | 建立待譯檔 | 檢查、匯出、寫回日常維護     |
 | 新建語言包 | 第一次開坑            |
-| 設定    | 切換界面語言（繁中／简中／英文） |
+| 設定    | 切換界面語言（15 種，對齊可製作翻譯語言） |
 
 
 **翻譯語言** 指 RimWorld 的 `Languages` 資料夾名稱，例如 `ChineseTraditional`、`ChineseSimplified`。
@@ -112,7 +112,7 @@ Three tabs at the top:
 | -------- | ---------------------------------------------------------------- |
 | Maintain | Check, export, and import for day-to-day work                    |
 | Scaffold | First-time language pack setup                                   |
-| Settings | UI language (Traditional Chinese / Simplified Chinese / English) |
+| Settings | UI language — 15 locales aligned with supported translation languages |
 
 
 **Translation language** is the RimWorld `Languages` folder name, e.g. `ChineseTraditional` or `ChineseSimplified`.

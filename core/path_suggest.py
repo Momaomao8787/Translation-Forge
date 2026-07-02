@@ -41,18 +41,98 @@ def sanitize_basename(name: str) -> str:
     return text or "Mod"
 
 
+_IDENTIFIER_WORD_RE = re.compile(r"[A-Z]?[a-z0-9]+")
+
+
+def _split_identifier_words(text: str) -> list[str]:
+    words: list[str] = []
+    for part in re.split(r"[\s\-_\.+]+", (text or "").strip()):
+        if not part:
+            continue
+        found = _IDENTIFIER_WORD_RE.findall(part)
+        if found:
+            words.extend(found)
+        else:
+            cleaned = "".join(ch for ch in part if ch.isalnum())
+            if cleaned:
+                words.append(cleaned)
+    return words
+
+
+def mod_name_to_camel(name: str) -> str:
+    words = _split_identifier_words(name)
+    if not words:
+        return "mod"
+    head = words[0].lower()
+    tail = "".join(word[:1].upper() + word[1:].lower() for word in words[1:] if word)
+    return head + tail
+
+
+def mod_name_to_pascal(name: str) -> str:
+    words = _split_identifier_words(name)
+    if not words:
+        return "Mod"
+    return "".join(word[:1].upper() + word[1:] for word in words if word)
+
+
+
+def resolve_package_id_base(source_mod: Path) -> str:
+    about_name = read_about_name(source_mod)
+    if about_name:
+        label = strip_known_suffixes(sanitize_basename(about_name))
+    else:
+        label = strip_known_suffixes(basename_for_source(source_mod))
+    return mod_name_to_pascal(label)
+
+
+def suggest_package_id(source_mod: Path, lang: str, suffix_override: str = "") -> str:
+    fallback = lang_package_suffix(lang)
+    suffix = (suffix_override or fallback).strip()
+    suffix = "".join(c for c in suffix if c.isalnum())
+    if not suffix:
+        suffix = "".join(c for c in fallback if c.isalnum()) or "LOC"
+    base = resolve_package_id_base(source_mod)
+    return f"{base}.{suffix}"
+
+
 def strip_known_suffixes(basename: str) -> str:
     text = basename.strip()
     changed = True
     while changed and text:
         changed = False
         for suffix in STRIP_SUFFIXES:
-            token = f"-{suffix}"
-            if text.endswith(token):
-                text = text[: -len(token)].rstrip(". ")
-                changed = True
+            for token in (f"-{suffix}", f" {suffix}"):
+                if text.endswith(token):
+                    text = text[: -len(token)].rstrip(". ")
+                    changed = True
+                    break
+            if changed:
                 break
     return text or basename
+
+
+def read_source_package_id(source_mod: Path) -> str:
+    about_path = source_mod / "About" / "About.xml"
+    if not about_path.is_file():
+        return ""
+    try:
+        root = ET.parse(about_path).getroot()
+    except ET.ParseError:
+        return ""
+    pid_el = root.find("packageId")
+    if pid_el is not None and pid_el.text:
+        return pid_el.text.strip()
+    return ""
+
+
+def resolve_mod_label(source_mod: Path) -> str:
+    about_name = read_about_name(source_mod)
+    if about_name:
+        return strip_known_suffixes(sanitize_basename(about_name))
+    source_pid = read_source_package_id(source_mod)
+    if source_pid:
+        return strip_known_suffixes(sanitize_basename(source_pid.split(".")[-1]))
+    return strip_known_suffixes(basename_for_source(source_mod))
 
 
 def read_about_name(source_mod: Path) -> str:
@@ -74,6 +154,20 @@ def basename_for_source(source_mod: Path) -> str:
     if about_name:
         return sanitize_basename(about_name)
     return sanitize_basename(source_mod.name)
+
+
+USER_MODS_FOLDER_NAME = "Rimworld Mod"
+
+
+def default_user_mods_dir(*, create: bool = True) -> Path:
+    documents = Path.home() / "Documents"
+    if os.name == "nt":
+        profile = os.environ.get("USERPROFILE", str(Path.home()))
+        documents = Path(profile) / "Documents"
+    root = documents / USER_MODS_FOLDER_NAME
+    if create:
+        root.mkdir(parents=True, exist_ok=True)
+    return root
 
 
 def default_rimworld_mods_dir() -> Path | None:
@@ -99,13 +193,7 @@ def resolve_rimworld_mods_dir(source_mod: Path) -> Path | None:
 
 
 def parent_dir_for_target(source_mod: Path) -> Path:
-    fixed = default_rimworld_mods_dir()
-    if fixed is not None:
-        return fixed
-    mods_dir = resolve_rimworld_mods_dir(source_mod)
-    if mods_dir is not None:
-        return mods_dir
-    return source_mod.resolve().parent
+    return default_user_mods_dir()
 
 
 def allocate_unique_folder(parent: Path, folder_name: str) -> tuple[Path, str]:
@@ -122,9 +210,7 @@ def allocate_unique_folder(parent: Path, folder_name: str) -> tuple[Path, str]:
 
 
 def suggest_folder_name(source_mod: Path, lang: str) -> str:
-    base = strip_known_suffixes(basename_for_source(source_mod))
-    suffix = lang_package_suffix(lang)
-    return f"{base}-{suffix}"
+    return f"{resolve_mod_label(source_mod)} {lang_package_suffix(lang)}"
 
 
 def suggest_target_mod_path(source_mod: Path, lang: str) -> tuple[Path, str]:

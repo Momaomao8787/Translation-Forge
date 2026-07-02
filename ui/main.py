@@ -148,7 +148,7 @@ def main(page: ft.Page) -> None:
     pending_file = ft.TextField(expand=True, read_only=True)
     export_format = ft.RadioGroup(
         content=ft.Row([ft.Radio(value="xml", label="XML"), ft.Radio(value="csv", label="CSV")]),
-        value="csv",
+        value="xml",
     )
     export_format_row = ft.Row([export_format])
 
@@ -248,7 +248,7 @@ def main(page: ft.Page) -> None:
     def update_pending_path_hint() -> None:
         target = (target_mod.value or "").strip()
         lang = language.value or ""
-        fmt = export_format.value or "csv"
+        fmt = export_format.value or "xml"
         if target and lang:
             pending_file.value = str(default_single_pending_path(Path(target), fmt))
         else:
@@ -266,7 +266,7 @@ def main(page: ft.Page) -> None:
             placeholder=placeholder_group.value or EXPORT_PLACEHOLDER_TODO,
             write_mode=write_mode,
             prefix=prefix,
-            fmt=export_format.value or "csv",
+            fmt=export_format.value or "xml",
         )
 
     def save_project_settings() -> None:
@@ -277,7 +277,7 @@ def main(page: ft.Page) -> None:
             source_mod.value or "",
             target_mod.value or "",
             language.value or "",
-            export_format.value or "csv",
+            export_format.value or "xml",
             work_mode=workflow_mode,
             create_about=bool(create_about.value),
             export_layout=layout_group.value or EXPORT_LAYOUT_SINGLE,
@@ -510,7 +510,6 @@ def main(page: ft.Page) -> None:
             create_about=bool(create_about.value),
             about_name=about_name_field.value or "",
             package_id=package_id_field.value or "",
-            about_description=tr.t("about.description.template", app=tr.t("app.title")),
         )
 
     def run_check_click():

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ui.i18n.detect import SUPPORTED_UI_LOCALES
+from core.ui_locales import SUPPORTED_UI_LOCALES, ui_locale_setting_key
 
 _LOCALES_DIR = Path(__file__).resolve().parent / "locales"
 
@@ -40,4 +40,4 @@ class Translator:
         return text
 
     def locale_options(self) -> list[tuple[str, str]]:
-        return [(loc, self.t(f"ui.locale.{loc.replace('-', '_')}")) for loc in SUPPORTED_UI_LOCALES]
+        return [(loc, self.t(ui_locale_setting_key(loc))) for loc in SUPPORTED_UI_LOCALES]
