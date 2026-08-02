@@ -80,6 +80,9 @@ forge fix-src --source-mod "..\原版Mod" --target-mod "..\原版Mod-TC" --lang 
 | 類型 | 說明 | 建議 |
 |------|------|------|
 | 清單索引欄位 | `rulesStrings`、`stringList`、`tips` 等帶數字索引的條目多半未匯出 | 對照遊戲報告手動補進 DefInjected |
+| 未列入白名單的字串欄位 | 如 `GameConditionDef.endMessage` 不在預設可譯欄位表，check／export 會漏 | 對照報告手動補；開發待辦是擴充 `DEFAULT_FIELDS` |
+| ParentName 繼承欄位 | 子 Def 未重寫的 `label`／`description`／`comps` 等不會出現在節點上，Forge 不展開繼承 | 遊戲仍可能對每個 `defName` 報缺；對照報告為子 Def 各寫一鍵 |
+| Comp 路徑型別名 | 遊戲常用 `comps.CompInspectString.inspectString`；Forge 可能只產出 `comps.0.inspectString` | 以 TranslationReport 鍵為準，必要時兩種並存 |
 | Comp／Verb／Ingest | 如 `comps.*.gizmoLabel`／`gizmoDesc`、`chargeNoun`、`ingestible.ingestCommandString`、`WorkGiverDef.gerund`／`verb` 等常未列入 | 同上；欄位名以 Def 原文為準，含拼寫錯誤如 `gizmoLable` |
 | WorkType 附加欄位 | `labelShort`、`pawnLabel`、`gerundLabel`、`verb` 可能只匯出 `description` | 手動補齊 |
 | Patch 動態內容 | 僅掃靜態 `Defs/`，`Patches` 寫入的字串可能漏檢 | 進遊戲驗證報告 |
@@ -164,6 +167,9 @@ forge fix-src --source-mod "..\SourceMod" --target-mod "..\SourceMod-TC" --lang 
 | Kind | What happens | What to do |
 |------|----------------|------------|
 | Indexed list fields | Entries such as `rulesStrings`, `stringList`, and `tips` are often not exported | Add them manually in DefInjected using the game report |
+| Fields outside the whitelist | Fields such as `GameConditionDef.endMessage` are not in the default translatable set, so check / export miss them | Fill from the report; backlog is to extend `DEFAULT_FIELDS` |
+| ParentName inheritance | Child defs that omit rewritten `label` / `description` / `comps` have no local nodes; Forge does not resolve inheritance | The game may still require a key per `defName`; add child keys from the report |
+| Comp path type names | The game often wants `comps.CompInspectString.inspectString`; Forge may only emit `comps.0.inspectString` | Prefer TranslationReport keys; keep both forms if needed |
 | Comp / Verb / Ingest | Fields like `comps.*.gizmoLabel` / `gizmoDesc`, `chargeNoun`, `ingestible.ingestCommandString`, `WorkGiverDef.gerund` / `verb` are often omitted | Same; keep Def field names as written, including typos such as `gizmoLable` |
 | Extra WorkType fields | `labelShort`, `pawnLabel`, `gerundLabel`, `verb` may be missing while only `description` is exported | Fill them manually |
 | Patch-added text | Only static `Defs/` are scanned; strings added via `Patches` may be missed | Verify with the in-game report |
