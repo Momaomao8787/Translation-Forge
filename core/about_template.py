@@ -21,14 +21,37 @@ def _text(el: ET.Element | None) -> str:
     return ""
 
 
+def read_published_file_id(source_mod: Path) -> str:
+    path = source_mod / "About" / "PublishedFileId.txt"
+    if path.is_file():
+        try:
+            text = path.read_text(encoding="utf-8").strip()
+        except OSError:
+            text = ""
+        if text:
+            return text.splitlines()[0].strip()
+    try:
+        parts = source_mod.resolve().parts
+        idx = parts.index("294100")
+        if idx + 1 < len(parts) and parts[idx + 1].isdigit():
+            return parts[idx + 1]
+    except (ValueError, OSError):
+        pass
+    return ""
+
+
+def workshop_url_from_file_id(file_id: str) -> str:
+    return f"steam://url/CommunityFilePage/{file_id}" if file_id else ""
+
+
 def read_source_about(source_mod: Path) -> dict:
     about_path = source_mod / "About" / "About.xml"
     if not about_path.is_file():
-        return {}
+        return {"publishedFileId": read_published_file_id(source_mod)}
     try:
         root = ET.parse(about_path).getroot()
     except ET.ParseError:
-        return {}
+        return {"publishedFileId": read_published_file_id(source_mod)}
     data: dict = {
         "name": _text(root.find("name")),
         "packageId": _text(root.find("packageId")),
@@ -41,21 +64,6 @@ def read_source_about(source_mod: Path) -> dict:
             if li.text and li.text.strip():
                 versions.append(li.text.strip())
     data["supportedVersions"] = versions
-    deps: list[dict[str, str]] = []
-    md = root.find("modDependencies")
-    if md is not None:
-        for li in md.findall("li"):
-            pid = _text(li.find("packageId"))
-            if not pid:
-                continue
-            deps.append(
-                {
-                    "packageId": pid,
-                    "displayName": _text(li.find("displayName")) or _text(root.find("name")),
-                    "steamWorkshopUrl": _text(li.find("steamWorkshopUrl")),
-                }
-            )
-    data["modDependencies"] = deps
     load_after: list[str] = []
     la = root.find("loadAfter")
     if la is not None:
@@ -63,6 +71,7 @@ def read_source_about(source_mod: Path) -> dict:
             if li.text and li.text.strip():
                 load_after.append(li.text.strip())
     data["loadAfter"] = load_after
+    data["publishedFileId"] = read_published_file_id(source_mod)
     return data
 
 
@@ -100,16 +109,13 @@ def build_about_fields(
     la = list(load_after if load_after is not None else [])
     if not la and source_pid:
         la = [source_pid]
+    elif source_pid and source_pid not in la:
+        la = [source_pid] + la
     dep_pid = source_pid
     dep_name = about.get("name") or basename_for_source(source_mod)
-    dep_url = ""
-    deps = about.get("modDependencies") or []
-    if deps:
-        dep_pid = deps[0].get("packageId", dep_pid)
-        dep_name = deps[0].get("displayName", dep_name)
-        dep_url = deps[0].get("steamWorkshopUrl", "")
-    elif source_pid:
-        deps = [{"packageId": source_pid, "displayName": dep_name, "steamWorkshopUrl": ""}]
+    dep_url = workshop_url_from_file_id(about.get("publishedFileId", ""))
+    if source_pid:
+        deps = [{"packageId": source_pid, "displayName": dep_name, "steamWorkshopUrl": dep_url}]
     else:
         deps = []
     return {

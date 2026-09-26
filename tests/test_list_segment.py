@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 from core.field_collect import collect_fields
 from core.field_resolve import resolve_field_text
-from core.list_segment import matches_thought_stage_handle
+from core.list_segment import find_list_item_index
 
 
 def test_koelime_relation_stages_use_numeric_index():
@@ -80,7 +80,7 @@ def test_field_resolve_finds_thought_stage_handle():
 </stages>"""
     )
     items = list(stages.findall("li"))
-    assert matches_thought_stage_handle(items[1], items, "Draconic_Blessing-1")
+    assert find_list_item_index(items, "Draconic_Blessing-1", ["stages"], "ThoughtDef") == 1
 
     thought = ET.fromstring(
         """

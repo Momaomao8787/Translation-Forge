@@ -6,7 +6,7 @@ from core.about_template import build_about_fields, write_about_xml
 from core.errors import LocalizedError, add_result_warning, set_result_error, zh_fallback
 from core.models import ProjectConfig, ScaffoldOptions, ScaffoldResult
 from core.path_suggest import validate_scaffold_target
-from core.paths import definjected_root, discover_defs_roots, lang_root, resolve_mod_path
+from core.paths import definjected_root, discover_defs_roots, lang_root, resolve_game_version, resolve_mod_path
 from core.scan import scan_pending
 from core.target_assess import assess_existing_target
 
@@ -29,7 +29,8 @@ def run_scaffold(config: ProjectConfig, options: ScaffoldOptions, app_title: str
         if assess.about_exists:
             add_result_warning(result, "msg.scaffold.existing_about")
 
-        defs_roots = discover_defs_roots(source_mod)
+        version = resolve_game_version(config.game_version, target_mod, source_mod)
+        defs_roots = discover_defs_roots(source_mod, version)
         if not defs_roots:
             result.error_key = "err.defs_not_found"
             result.error = zh_fallback("err.defs_not_found")

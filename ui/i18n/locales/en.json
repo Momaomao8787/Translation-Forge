@@ -51,6 +51,7 @@
   "msg.check.pending": "{count} entries pending translation",
   "msg.check.pending_format_mix": "Warning: both CSV and XML pending files exist; do not mix formats",
   "msg.check.scanned_defs": "Scanned {count} Defs folder(s)",
+  "msg.check.stale_keys": "Warning: {count} DefInjected key(s) no longer match any source Def or field and may be stale",
   "msg.check.strategy_hint": "Warning: pending file manifest write strategy differs from current settings ({hint})",
   "msg.check.warning_preview": "{preview}",
   "msg.check.write_strategy_mix": "Warning: {count} tag(s) appear in both prefixed and non-prefixed files",

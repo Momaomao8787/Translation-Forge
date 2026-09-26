@@ -51,6 +51,7 @@
   "msg.check.pending": "尚待翻译 {count} 条",
   "msg.check.pending_format_mix": "警告：同时存在 CSV 与 XML 待译档，请勿混用格式",
   "msg.check.scanned_defs": "已扫描 {count} 处 Defs",
+  "msg.check.stale_keys": "警告：{count} 条 DefInjected 键在原版找不到对应 Def 或字段，可能已过时",
   "msg.check.strategy_hint": "警告：待译档 manifest 写入策略与目前设定不一致（{hint}）",
   "msg.check.warning_preview": "{preview}",
   "msg.check.write_strategy_mix": "警告：{count} 个 tag 同时出现于前缀档与非前缀档",

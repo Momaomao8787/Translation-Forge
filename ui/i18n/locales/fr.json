@@ -51,6 +51,7 @@
   "msg.check.pending": "{count} entrées en attente de traduction",
   "msg.check.pending_format_mix": "Avertissement : des fichiers en attente CSV et XML existent ; ne mélangez pas les formats",
   "msg.check.scanned_defs": "{count} dossier(s) Defs analysé(s)",
+  "msg.check.stale_keys": "Avertissement : {count} clé(s) DefInjected ne correspondent plus à aucun Def ou champ source et sont peut-être obsolètes",
   "msg.check.strategy_hint": "Avertissement : la stratégie d'écriture du manifeste diffère des paramètres actuels ({hint})",
   "msg.check.warning_preview": "{preview}",
   "msg.check.write_strategy_mix": "Avertissement : {count} balise(s) apparaissent à la fois dans des fichiers préfixés et non préfixés",

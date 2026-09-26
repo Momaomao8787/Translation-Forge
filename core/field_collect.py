@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from core.list_segment import for_list_item
+from core.list_segment import for_list_item, list_items
 from core.models import DEFAULT_FIELDS
 
 TRANSLATABLE_LEAF_TAGS = frozenset(
@@ -74,12 +74,12 @@ def collect_fields(def_node: ET.Element) -> dict[str, str]:
     label_fallback = fields.get("label", "")
     verbs = def_node.find("verbs")
     if verbs is not None:
-        for li in verbs.findall("li"):
-            vc = li.find("verbClass")
-            if vc is None or not (vc.text or "").strip():
+        verb_items = list_items(verbs)
+        for li in verb_items:
+            seg = for_list_item(li, ["verbs"], def_type, verb_items)
+            if seg is None:
                 continue
-            class_name = vc.text.strip()
-            path = f"verbs.{class_name}.label"
+            path = f"verbs.{seg}.label"
             if path in fields:
                 continue
             lab = li.find("label")

@@ -31,6 +31,7 @@ _ZH_FALLBACK: dict[str, str] = {
     "msg.check.collision_warning": "警告：{count} 項寫回檔名可能混淆（同一 DefType 內多個來源共用 leaf 檔名）",
     "msg.check.warning_preview": "{preview}",
     "msg.check.duplicate_tags": "警告：{count} 個 DefInjected 檔內有重複 tag",
+    "msg.check.stale_keys": "警告：{count} 條 DefInjected 鍵在原版找不到對應 Def 或欄位，可能已過時",
     "msg.check.write_strategy_mix": "警告：{count} 個 tag 同時出現於前綴檔與非前綴檔",
     "msg.check.strategy_hint": "警告：待譯檔 manifest 寫入策略與目前設定不一致（{hint}）",
     "msg.check.pending_format_mix": "警告：同時存在 CSV 與 XML 待譯檔，請勿混用格式",

@@ -51,6 +51,7 @@
   "msg.check.pending": "{count} entradas pendientes de traducción",
   "msg.check.pending_format_mix": "Advertencia: existen archivos pendientes CSV y XML; no mezcle formatos",
   "msg.check.scanned_defs": "Se analizaron {count} carpeta(s) Defs",
+  "msg.check.stale_keys": "Advertencia: {count} clave(s) DefInjected ya no coinciden con ningún Def o campo de origen y pueden estar obsoletas",
   "msg.check.strategy_hint": "Advertencia: la estrategia de escritura del manifiesto pendiente difiere de la configuración actual ({hint})",
   "msg.check.warning_preview": "{preview}",
   "msg.check.write_strategy_mix": "Advertencia: {count} etiqueta(s) aparecen tanto en archivos con prefijo como sin prefijo",

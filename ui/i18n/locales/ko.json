@@ -51,6 +51,7 @@
   "msg.check.pending": "번역 대기 {count}개",
   "msg.check.pending_format_mix": "경고: CSV와 XML 대기 파일이 모두 존재합니다. 형식을 혼용하지 마세요",
   "msg.check.scanned_defs": "{count}개의 Defs 폴더를 검사했습니다",
+  "msg.check.stale_keys": "경고: DefInjected 키 {count}개가 원본 Def 또는 필드와 일치하지 않아 오래되었을 수 있습니다",
   "msg.check.strategy_hint": "경고: 대기 파일 manifest 쓰기 전략이 현재 설정과 다릅니다 ({hint})",
   "msg.check.warning_preview": "{preview}",
   "msg.check.write_strategy_mix": "경고: {count}개의 태그가 접두사 파일과 비접두사 파일 모두에 존재합니다",

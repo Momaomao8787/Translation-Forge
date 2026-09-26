@@ -97,6 +97,8 @@ FORGE_UI_KEYS = (
     "Forge.ScaffoldRepeatBody",
     "Forge.ScaffoldRepeatConfirm",
     "Forge.ScaffoldRepeatCancel",
+    "Forge.ModPickerSearch",
+    "Forge.ModPickerNoResults",
 )
 
 FORGE_UI_FROM_LOCALE = {
@@ -180,6 +182,8 @@ FORGE_UI_MANUAL = {
         "Forge.HarImportHint": "If the pending file contains colorChannels or bodyAddons technical keys, keep the English source values on writeback or addon textures may break.",
         "Forge.StatusIdle": "Ready.",
         "Forge.StatusRunning": "Running…",
+        "Forge.ModPickerSearch": "Search…",
+        "Forge.ModPickerNoResults": "No matching mods.",
     },
     "zh-Hant": {
         "Forge.MainMenuEntry": "翻譯鍛造台",
@@ -208,6 +212,8 @@ FORGE_UI_MANUAL = {
         "Forge.HarImportHint": "若待譯檔含 colorChannels 或 bodyAddons 技術鍵，寫回時須保留英文原值，否則附加貼圖可能失效。",
         "Forge.StatusIdle": "就緒。",
         "Forge.StatusRunning": "執行中…",
+        "Forge.ModPickerSearch": "搜尋…",
+        "Forge.ModPickerNoResults": "無符合的模組。",
     },
     "zh-Hans": {
         "Forge.MainMenuEntry": "翻译锻造台",
@@ -236,6 +242,8 @@ FORGE_UI_MANUAL = {
         "Forge.HarImportHint": "若待译档含 colorChannels 或 bodyAddons 技术键，写回时须保留英文原值，否则附加贴图可能失效。",
         "Forge.StatusIdle": "就绪。",
         "Forge.StatusRunning": "执行中…",
+        "Forge.ModPickerSearch": "搜索…",
+        "Forge.ModPickerNoResults": "无符合的模组。",
     },
 }
 
@@ -278,7 +286,7 @@ def forge_ui_text(forge_key: str, ui_locale: str, table: dict[str, str]) -> str:
     locale_key = FORGE_UI_FROM_LOCALE.get(forge_key)
     if locale_key and locale_key in en:
         return en[locale_key]
-    return forge_key
+    return FORGE_UI_MANUAL["en"].get(forge_key, forge_key)
 
 
 def message_keys(table: dict[str, str]) -> list[tuple[str, str]]:

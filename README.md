@@ -81,12 +81,12 @@ forge fix-src --source-mod "..\原版Mod" --target-mod "..\原版Mod-TC" --lang 
 |------|------|------|
 | 清單索引欄位 | `rulesStrings`、`stringList`、`tips` 等帶數字索引的條目多半未匯出 | 對照遊戲報告手動補進 DefInjected |
 | 未列入白名單的字串欄位 | 如 `GameConditionDef.endMessage` 不在預設可譯欄位表，check／export 會漏 | 對照報告手動補；開發待辦是擴充 `DEFAULT_FIELDS` |
-| ParentName 繼承欄位 | 子 Def 未重寫的 `label`／`description`／`comps` 等不會出現在節點上，Forge 不展開繼承 | 遊戲仍可能對每個 `defName` 報缺；對照報告為子 Def 各寫一鍵 |
+| 跨模組父 Def | 同一來源內的 `ParentName` 繼承會展開；父 Def 在 RimWorld 本體、DLC 或其他模組時看不到父層欄位 | 對照報告為子 Def 補上繼承來的鍵 |
 | Comp 路徑型別名 | 遊戲常用 `comps.CompInspectString.inspectString`；Forge 可能只產出 `comps.0.inspectString` | 以 TranslationReport 鍵為準，必要時兩種並存 |
 | Comp／Verb／Ingest | 如 `comps.*.gizmoLabel`／`gizmoDesc`、`chargeNoun`、`ingestible.ingestCommandString`、`WorkGiverDef.gerund`／`verb` 等常未列入 | 同上；欄位名以 Def 原文為準，含拼寫錯誤如 `gizmoLable` |
 | WorkType 附加欄位 | `labelShort`、`pawnLabel`、`gerundLabel`、`verb` 可能只匯出 `description` | 手動補齊 |
 | Patch 動態內容 | 僅掃靜態 `Defs/`，`Patches` 寫入的字串可能漏檢 | 進遊戲驗證報告 |
-| 多版本 Def 根 | 可能一併掃到舊版子資料夾，產生與目標遊戲版本無關的偽缺 | 來源路徑盡量指向該版實際載入的 Defs；或以報告排除 |
+| 多版本 Def 根 | 依 RimWorld 規則挑選 `LoadFolders.xml` 或版本資料夾，目標版本取語言包 About 支援的最高版本 | 語言包 About 未列出目標版本時先補上 |
 | TC 整合語言路徑 | 預設比對 TC 根目錄 `Languages/`；`Compatibility/.../Languages` 可能未納入 | 手動指定路徑，或進遊戲驗證 |
 | Verb 路徑 | 可能依 class 名產出路徑，與遊戲實際用的 label slug 不一致 | 以 TranslationReport 的實際鍵為準 |
 | Keyed | 不在 DefInjected 範圍 | 另手動維護 Keyed 檔 |
@@ -168,12 +168,12 @@ forge fix-src --source-mod "..\SourceMod" --target-mod "..\SourceMod-TC" --lang 
 |------|----------------|------------|
 | Indexed list fields | Entries such as `rulesStrings`, `stringList`, and `tips` are often not exported | Add them manually in DefInjected using the game report |
 | Fields outside the whitelist | Fields such as `GameConditionDef.endMessage` are not in the default translatable set, so check / export miss them | Fill from the report; backlog is to extend `DEFAULT_FIELDS` |
-| ParentName inheritance | Child defs that omit rewritten `label` / `description` / `comps` have no local nodes; Forge does not resolve inheritance | The game may still require a key per `defName`; add child keys from the report |
+| Cross-mod parent defs | `ParentName` inheritance is resolved within the source mod; parents defined in RimWorld Core, DLCs or other mods are not visible | Add the inherited child keys from the report |
 | Comp path type names | The game often wants `comps.CompInspectString.inspectString`; Forge may only emit `comps.0.inspectString` | Prefer TranslationReport keys; keep both forms if needed |
 | Comp / Verb / Ingest | Fields like `comps.*.gizmoLabel` / `gizmoDesc`, `chargeNoun`, `ingestible.ingestCommandString`, `WorkGiverDef.gerund` / `verb` are often omitted | Same; keep Def field names as written, including typos such as `gizmoLable` |
 | Extra WorkType fields | `labelShort`, `pawnLabel`, `gerundLabel`, `verb` may be missing while only `description` is exported | Fill them manually |
 | Patch-added text | Only static `Defs/` are scanned; strings added via `Patches` may be missed | Verify with the in-game report |
-| Multi-version Def roots | Older version folders may be scanned, causing false missing entries for your target version | Point the source path at the Defs that version actually loads, or ignore those keys via the report |
+| Multi-version Def roots | Folders are chosen by RimWorld rules from `LoadFolders.xml` or version folders; the target version is the highest one listed in the language pack About | List the target version in the language pack About |
 | TC compatibility language paths | By default only the TC root `Languages/` tree is compared; `Compatibility/.../Languages` may be skipped | Pass paths manually, or verify in-game |
 | Verb path handles | Paths may be built from class names instead of the label slug the game uses | Prefer the keys shown in TranslationReport |
 | Keyed | Outside DefInjected scope | Maintain Keyed files separately |

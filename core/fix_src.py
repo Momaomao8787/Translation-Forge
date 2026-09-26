@@ -4,10 +4,11 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from core.def_inherit import build_def_index
 from core.errors import LocalizedError, set_result_error, zh_fallback
 from core.field_resolve import build_def_element_map, resolve_field_text_from_maps
 from core.models import ProjectConfig
-from core.paths import definjected_root, discover_defs_roots, resolve_mod_path
+from core.paths import definjected_root, discover_defs_roots, resolve_game_version, resolve_mod_path
 from core.scan import build_def_map
 from core.src_comment import format_src_comment
 
@@ -93,9 +94,11 @@ def run_fix_src(config: ProjectConfig, *, dry_run: bool = False) -> FixSrcResult
             result.error = zh_fallback("err.target_mod_missing")
             return result
 
-        defs_roots = discover_defs_roots(source_mod)
-        def_map, _ = build_def_map(source_mod, defs_roots)
-        element_map = build_def_element_map(def_map, defs_roots)
+        version = resolve_game_version(config.game_version, target_mod, source_mod)
+        defs_roots = discover_defs_roots(source_mod, version)
+        index = build_def_index(defs_roots)
+        def_map, _ = build_def_map(source_mod, defs_roots, index=index)
+        element_map = build_def_element_map(def_map, defs_roots, index)
         di_root = definjected_root(target_mod, config.target_lang)
         if not di_root.is_dir():
             result.error = f"DefInjected not found: {di_root}"

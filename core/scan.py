@@ -12,10 +12,20 @@ from core.check_quality import (
 from core.errors import LocalizedError, add_result_message, add_result_warning, set_result_error, zh_fallback
 from core.export_merge import default_single_pending_path
 from core.field_collect import collect_fields
+from core.field_resolve import build_def_element_map, index_path
 from core.har_field_rules import should_skip_from_pending
 from core.meta import find_meta_for_input, read_meta
 from core.models import DEFAULT_FIELDS, CheckResult, DefRecord, PendingEntry, ProjectConfig
-from core.paths import definjected_root, discover_defs_roots, lang_root, resolve_mod_path
+from core.def_inherit import DefIndex, build_def_index
+from core.paths import (
+    definjected_root,
+    discover_defs_roots,
+    discover_mod_subfolders,
+    lang_root,
+    resolve_game_version,
+    resolve_mod_path,
+)
+from core.stale_keys import find_stale_keys, read_patch_text
 
 
 def _is_translated(value: str) -> bool:
@@ -27,48 +37,23 @@ def _is_translated(value: str) -> bool:
     return True
 
 
-def _parse_def_file(def_file: Path, source_mod: Path, allowed_fields: tuple[str, ...]) -> list[tuple[str, str, DefRecord]]:
-    out: list[tuple[str, str, DefRecord]] = []
+def _def_fields(node: ET.Element, allowed_fields: tuple[str, ...]) -> dict[str, str]:
+    if allowed_fields == DEFAULT_FIELDS:
+        return collect_fields(node)
+    fields: dict[str, str] = {}
+    for f in allowed_fields:
+        el = node.find(f)
+        if el is not None:
+            fields[f] = (el.text or "").strip()
+    return fields
+
+
+def _source_rel(def_file: Path, source_mod: Path) -> str:
     try:
-        tree = ET.parse(def_file)
-    except ET.ParseError:
-        return out
-    root = tree.getroot()
-    for node in root:
-        if not isinstance(node.tag, str):
-            continue
-        def_name_el = node.find("defName")
-        if def_name_el is None or def_name_el.text is None:
-            continue
-        def_name = def_name_el.text.strip()
-        if not def_name:
-            continue
-        fields: dict[str, str] = {}
-        restrict_top_level = allowed_fields != DEFAULT_FIELDS
-        if restrict_top_level:
-            for f in allowed_fields:
-                el = node.find(f)
-                if el is not None and el.text is not None:
-                    fields[f] = el.text.strip()
-                elif el is not None:
-                    fields[f] = ""
-        else:
-            fields = collect_fields(node)
-        if not fields:
-            continue
-        try:
-            source_rel = str(def_file.resolve().relative_to(source_mod.resolve()))
-        except ValueError:
-            source_rel = str(def_file)
-        record = DefRecord(
-            def_name=def_name,
-            def_type=node.tag,
-            source_rel=source_rel.replace("\\", "/"),
-            source_def_file=def_file.name,
-            fields=fields,
-        )
-        out.append((node.tag, def_name, record))
-    return out
+        rel = str(def_file.resolve().relative_to(source_mod.resolve()))
+    except ValueError:
+        rel = str(def_file)
+    return rel.replace("\\", "/")
 
 
 def _def_key(def_type: str, def_name: str) -> tuple[str, str]:
@@ -79,19 +64,31 @@ def _format_duplicate(def_type: str, def_name: str) -> str:
     return f"{def_type}/{def_name}"
 
 
-def build_def_map(source_mod: Path, defs_roots: list[Path], allowed_fields: tuple[str, ...] = DEFAULT_FIELDS):
+def build_def_map(
+    source_mod: Path,
+    defs_roots: list[Path],
+    allowed_fields: tuple[str, ...] = DEFAULT_FIELDS,
+    index: DefIndex | None = None,
+):
+    index = index if index is not None else build_def_index(defs_roots)
     def_map: dict[tuple[str, str], DefRecord] = {}
     duplicate: list[str] = []
-    for root in defs_roots:
-        for def_file in root.rglob("*.xml"):
-            for def_type, def_name, record in _parse_def_file(def_file, source_mod, allowed_fields):
-                key = _def_key(def_type, def_name)
-                if key in def_map:
-                    duplicate.append(
-                        f"{_format_duplicate(def_type, def_name)} ← 略過 {record.source_rel}"
-                    )
-                    continue
-                def_map[key] = record
+    for def_file, def_name, node in index.def_nodes():
+        fields = _def_fields(index.resolved(node)[0], allowed_fields)
+        if not fields:
+            continue
+        source_rel = _source_rel(def_file, source_mod)
+        key = _def_key(node.tag, def_name)
+        if key in def_map:
+            duplicate.append(f"{_format_duplicate(node.tag, def_name)} ← 略過 {source_rel}")
+            continue
+        def_map[key] = DefRecord(
+            def_name=def_name,
+            def_type=node.tag,
+            source_rel=source_rel,
+            source_def_file=def_file.name,
+            fields=fields,
+        )
     return def_map, duplicate
 
 
@@ -135,6 +132,14 @@ def find_leaf_collisions(def_map: dict[tuple[str, str], DefRecord]) -> list[str]
     return collisions
 
 
+def _translated_index_paths(def_elem: ET.Element | None, def_type: str, fields: set[str]) -> set[str]:
+    if def_elem is None or not fields:
+        return set()
+    paths = {index_path(def_elem, def_type, f) for f in fields}
+    paths.discard(None)
+    return paths
+
+
 def _warning_preview(items: list[str], limit: int = 2) -> str:
     if not items:
         return ""
@@ -147,23 +152,29 @@ def _warning_preview(items: list[str], limit: int = 2) -> str:
 def scan_pending(config: ProjectConfig, allowed_fields: tuple[str, ...] = DEFAULT_FIELDS) -> tuple[list[PendingEntry], dict[tuple[str, str], DefRecord], list[str], list[str], list[Path], int]:
     source_mod = resolve_mod_path(config.source_mod, "err.specify_source_mod")
     target_mod = resolve_mod_path(config.target_mod, "err.specify_target_mod")
-    defs_roots = discover_defs_roots(source_mod)
-    def_map, duplicate = build_def_map(source_mod, defs_roots, allowed_fields)
+    defs_roots = discover_defs_roots(source_mod, resolve_game_version(config.game_version, target_mod, source_mod))
+    index = build_def_index(defs_roots)
+    def_map, duplicate = build_def_map(source_mod, defs_roots, allowed_fields, index)
     di_root = definjected_root(target_mod, config.target_lang)
     tr_map = build_tr_map(di_root)
     collisions = find_leaf_collisions(def_map)
+    element_map = build_def_element_map(def_map, defs_roots, index) if tr_map else {}
 
     pending: list[PendingEntry] = []
     har_skipped = 0
     restrict_top_level = allowed_fields != DEFAULT_FIELDS
     for rec in sorted(def_map.values(), key=lambda r: (r.def_type, r.def_name)):
         translated = tr_map.get(rec.def_name, set())
+        def_elem = element_map.get((rec.def_type, rec.def_name))
+        translated_paths = _translated_index_paths(def_elem, rec.def_type, translated)
         keys = [f for f in allowed_fields if f in rec.fields] if restrict_top_level else sorted(rec.fields.keys())
         for field_name in keys:
             if should_skip_from_pending(rec.def_type, field_name):
                 har_skipped += 1
                 continue
             if field_name in translated:
+                continue
+            if translated_paths and index_path(def_elem, rec.def_type, field_name) in translated_paths:
                 continue
             pending.append(
                 PendingEntry(
@@ -196,7 +207,8 @@ def run_check(
             result.error_key = "err.target_mod_missing"
             result.error = zh_fallback("err.target_mod_missing")
             return result
-        defs_roots = discover_defs_roots(source_mod)
+        version = resolve_game_version(config.game_version, target_mod, source_mod)
+        defs_roots = discover_defs_roots(source_mod, version)
         if not defs_roots:
             result.error_key = "err.defs_not_found"
             result.error = zh_fallback("err.defs_not_found")
@@ -213,6 +225,11 @@ def run_check(
         result.leaf_collisions = collisions
         di_root = definjected_root(target_mod, config.target_lang)
         result.duplicate_tags = find_duplicate_tags(di_root)
+        result.stale_keys = find_stale_keys(
+            di_root,
+            build_def_index(defs_roots),
+            read_patch_text(discover_mod_subfolders(source_mod, "Patches", version)),
+        )
         prefix = (import_prefix or "").strip()
         if not prefix:
             for ext in ("xml", "csv"):
@@ -247,6 +264,11 @@ def run_check(
         if result.duplicate_tags:
             add_result_warning(result, "msg.check.duplicate_tags", count=len(result.duplicate_tags))
             preview = _warning_preview(result.duplicate_tags)
+            if preview:
+                add_result_warning(result, "msg.check.warning_preview", preview=preview)
+        if result.stale_keys:
+            add_result_warning(result, "msg.check.stale_keys", count=len(result.stale_keys))
+            preview = _warning_preview(result.stale_keys)
             if preview:
                 add_result_warning(result, "msg.check.warning_preview", preview=preview)
         if result.write_strategy_mix:

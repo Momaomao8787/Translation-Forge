@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
+from core.def_inherit import DefIndex, build_def_index
 from core.field_path import parse_field_path, slug_segment
-from core.list_segment import matches_thought_stage_handle
+from core.list_segment import find_list_item_index, list_items
 from core.models import DefRecord
 
 _BACKSTORY_TYPES = frozenset({"BackstoryDef", "AlienRace.AlienBackstoryDef"})
@@ -23,17 +24,54 @@ def _element_text(elem: ET.Element | None) -> str | None:
     return text if text else None
 
 
-def _find_li_by_segment(container: ET.Element, segment: str) -> ET.Element | None:
-    items = [child for child in container if _local_tag(child) == "li"]
-    if segment.isdigit():
-        idx = int(segment)
-        if 0 <= idx < len(items):
-            return items[idx]
-        return None
+def _find_child_ignore_case(container: ET.Element, segment: str) -> ET.Element | None:
+    wanted = segment.lower()
+    for child in container:
+        if isinstance(child.tag, str) and _local_tag(child) != "li" and _local_tag(child).lower() == wanted:
+            return child
+    return None
 
-    for li in items:
-        if matches_thought_stage_handle(li, items, segment):
-            return li
+
+def index_path(def_elem: ET.Element | None, def_type: str, field_path: str) -> str | None:
+    parts = parse_field_path(field_path)
+    if def_elem is None or not parts:
+        return None
+    current = def_elem
+    tags: list[str] = []
+    out: list[str] = []
+    for segment in parts[:-1]:
+        child = None if segment.isdigit() else _find_child_ignore_case(current, segment)
+        if child is not None:
+            tag = _local_tag(child)
+            current = child
+            tags.append(tag)
+            out.append(tag.lower())
+            continue
+        items = list_items(current)
+        if not items:
+            return None
+        idx = find_list_item_index(items, segment, tags, def_type)
+        if idx is None:
+            return None
+        current = items[idx]
+        tags.append(str(idx))
+        out.append(str(idx))
+    out.append(parts[-1].lower())
+    return ".".join(out)
+
+
+def _find_li_by_segment(
+    container: ET.Element,
+    segment: str,
+    path_parts: list[str],
+    def_type: str,
+) -> ET.Element | None:
+    items = list_items(container)
+    idx = find_list_item_index(items, segment, path_parts, def_type)
+    if idx is not None:
+        return items[idx]
+    if segment.isdigit():
+        return None
 
     seg_slug = slug_segment(segment)
     for li in items:
@@ -66,8 +104,9 @@ def _field_lookup_order(field_path: str, def_type: str) -> list[str]:
 
 
 def resolve_field_text(def_elem: ET.Element, field_path: str, *, def_type: str = "") -> str | None:
+    def_type = def_type or _local_tag(def_elem)
     for candidate in _field_lookup_order(field_path, def_type):
-        text = _resolve_field_text_once(def_elem, candidate)
+        text = _resolve_field_text_once(def_elem, candidate, def_type)
         if text is not None:
             return text
 
@@ -76,12 +115,13 @@ def resolve_field_text(def_elem: ET.Element, field_path: str, *, def_type: str =
     return None
 
 
-def _resolve_field_text_once(def_elem: ET.Element, field_path: str) -> str | None:
+def _resolve_field_text_once(def_elem: ET.Element, field_path: str, def_type: str = "") -> str | None:
     parts = parse_field_path(field_path)
     if not parts:
         return None
 
     current: ET.Element | None = def_elem
+    tags: list[str] = []
     for i, segment in enumerate(parts):
         if current is None:
             return None
@@ -93,14 +133,16 @@ def _resolve_field_text_once(def_elem: ET.Element, field_path: str) -> str | Non
             leaf = current.find(segment)
             return _element_text(leaf)
 
-        child = current.find(segment)
+        child = None if segment.isdigit() else current.find(segment)
         if child is not None:
             current = child
+            tags.append(segment)
             continue
 
-        li = _find_li_by_segment(current, segment)
+        li = _find_li_by_segment(current, segment, tags, def_type)
         if li is not None:
             current = li
+            tags.append(segment)
             continue
         return None
     return None
@@ -132,31 +174,14 @@ def _lookup_def_record(
 def build_def_element_map(
     def_map: dict[tuple[str, str], DefRecord],
     defs_roots: list,
+    index: DefIndex | None = None,
 ) -> dict[tuple[str, str], ET.Element]:
-    from pathlib import Path
-
+    index = index if index is not None else build_def_index(defs_roots)
     out: dict[tuple[str, str], ET.Element] = {}
-    for root in defs_roots:
-        root_path = Path(root)
-        if not root_path.is_dir():
-            continue
-        for def_file in root_path.rglob("*.xml"):
-            try:
-                tree = ET.parse(def_file)
-            except ET.ParseError:
-                continue
-            for node in tree.getroot():
-                if not isinstance(node.tag, str):
-                    continue
-                def_name_el = node.find("defName")
-                if def_name_el is None or def_name_el.text is None:
-                    continue
-                def_name = def_name_el.text.strip()
-                if not def_name:
-                    continue
-                key = _def_map_key(node.tag, def_name)
-                if key not in out:
-                    out[key] = node
+    for _, def_name, node in index.def_nodes():
+        key = _def_map_key(node.tag, def_name)
+        if key not in out:
+            out[key] = index.resolved(node)[0]
     return out
 
 

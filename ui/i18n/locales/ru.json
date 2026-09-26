@@ -51,6 +51,7 @@
   "msg.check.pending": "Ожидает перевода: {count} записей",
   "msg.check.pending_format_mix": "Предупреждение: существуют и CSV, и XML файлы ожидания; не смешивайте форматы",
   "msg.check.scanned_defs": "Просканировано папок Defs: {count}",
+  "msg.check.stale_keys": "Предупреждение: {count} ключей DefInjected не соответствуют Def или полю исходного мода и, возможно, устарели",
   "msg.check.strategy_hint": "Предупреждение: стратегия записи манифеста файла ожидания отличается от текущих настроек ({hint})",
   "msg.check.warning_preview": "{preview}",
   "msg.check.write_strategy_mix": "Предупреждение: {count} тегов присутствуют и в файлах с префиксом, и без",

@@ -245,7 +245,7 @@ def main() -> None:
             continue
         table = dict(en)
         if ui_locale in NATIVE_UI_LOCALES:
-            table.update(_load_overlay(ui_locale))
+            table.update({k: v for k, v in _load_overlay(ui_locale).items() if k in en})
         _write_locale(ui_locale, table)
 
     print(f"Wrote {len(SUPPORTED_UI_LOCALES)} locale files to {LOCALES_DIR}")

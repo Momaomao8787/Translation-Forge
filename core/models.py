@@ -91,6 +91,7 @@ class ProjectConfig:
     source_mod: Path
     target_mod: Path
     target_lang: str
+    game_version: str = ""
 
 
 @dataclass
@@ -124,6 +125,7 @@ class CheckResult:
     duplicate_def_names: list[str] = field(default_factory=list)
     leaf_collisions: list[str] = field(default_factory=list)
     duplicate_tags: list[str] = field(default_factory=list)
+    stale_keys: list[str] = field(default_factory=list)
     write_strategy_mix: list[str] = field(default_factory=list)
     strategy_hints: list[str] = field(default_factory=list)
     messages: list[str] = field(default_factory=list)

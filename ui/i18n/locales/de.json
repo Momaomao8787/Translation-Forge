@@ -51,6 +51,7 @@
   "msg.check.pending": "{count} Einträge warten auf Übersetzung",
   "msg.check.pending_format_mix": "Warnung: CSV- und XML-Ausstehend-Dateien vorhanden; Formate nicht mischen",
   "msg.check.scanned_defs": "{count} Defs-Ordner gescannt",
+  "msg.check.stale_keys": "Warnung: {count} DefInjected-Schlüssel passen zu keinem Quell-Def oder -Feld mehr und sind möglicherweise veraltet",
   "msg.check.strategy_hint": "Warnung: Schreibstrategie des Ausstehend-Manifests weicht von aktuellen Einstellungen ab ({hint})",
   "msg.check.warning_preview": "{preview}",
   "msg.check.write_strategy_mix": "Warnung: {count} Tag(s) erscheinen sowohl in präfixierten als auch in nicht präfixierten Dateien",

@@ -51,6 +51,7 @@
   "msg.check.pending": "翻訳待ち {count} 件",
   "msg.check.pending_format_mix": "警告：CSV と XML の未翻訳ファイルが両方存在します。形式を混在させないでください",
   "msg.check.scanned_defs": "{count} 件の Defs フォルダをスキャンしました",
+  "msg.check.stale_keys": "警告：{count} 件の DefInjected キーが元 Mod の Def またはフィールドに一致せず、古くなっている可能性があります",
   "msg.check.strategy_hint": "警告：未翻訳ファイルのマニフェスト書き込み戦略が現在の設定と異なります（{hint}）",
   "msg.check.warning_preview": "{preview}",
   "msg.check.write_strategy_mix": "警告：{count} 件のタグがプレフィックス付きファイルと非プレフィックスファイルの両方に存在します",

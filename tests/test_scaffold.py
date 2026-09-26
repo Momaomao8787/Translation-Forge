@@ -4,7 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from core.about_template import default_description, default_package_id, read_source_about
+from core.about_template import (
+    build_about_fields,
+    default_description,
+    default_package_id,
+    read_published_file_id,
+    read_source_about,
+    workshop_url_from_file_id,
+)
 from core.models import ProjectConfig, ScaffoldOptions
 from core.path_suggest import (
     default_rimworld_mods_dir,
@@ -111,6 +118,50 @@ def test_default_package_id_invalid_suffix_override_falls_back_to_lang(tmp_path:
         encoding="utf-8",
     )
     assert default_package_id(source, "ChineseTraditional", ".") == "KurinFox.TC"
+
+
+def test_build_about_fields_depends_only_on_source_with_workshop_url(tmp_path: Path):
+    source = tmp_path / "source_mod"
+    target = tmp_path / "target_mod"
+    about = source / "About"
+    about.mkdir(parents=True)
+    (about / "About.xml").write_text(
+        """<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Demo Mod</name>
+  <packageId>Demo.Mod</packageId>
+  <supportedVersions><li>1.6</li></supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+  </modDependencies>
+</ModMetaData>""",
+        encoding="utf-8",
+    )
+    (about / "PublishedFileId.txt").write_text("1234567890\n", encoding="utf-8")
+    target.mkdir()
+    fields = build_about_fields(source, target, "ChineseTraditional")
+    deps = fields["modDependencies"]
+    assert len(deps) == 1
+    assert deps[0]["packageId"] == "Demo.Mod"
+    assert deps[0]["displayName"] == "Demo Mod"
+    assert deps[0]["steamWorkshopUrl"] == "steam://url/CommunityFilePage/1234567890"
+    assert fields["loadAfter"] == ["Demo.Mod"]
+
+
+def test_read_published_file_id_falls_back_to_workshop_folder(tmp_path: Path):
+    root = tmp_path / "steamapps" / "workshop" / "content" / "294100" / "99887766"
+    about = root / "About"
+    about.mkdir(parents=True)
+    (about / "About.xml").write_text(
+        "<ModMetaData><name>X</name><packageId>X.Mod</packageId></ModMetaData>",
+        encoding="utf-8",
+    )
+    assert read_published_file_id(root) == "99887766"
+    assert workshop_url_from_file_id("99887766") == "steam://url/CommunityFilePage/99887766"
 
 
 def test_default_description():
