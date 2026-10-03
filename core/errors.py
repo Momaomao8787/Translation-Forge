@@ -16,7 +16,7 @@ _ZH_FALLBACK: dict[str, str] = {
     "err.scaffold_target_inside_source": "目標不可位於來源 Mod 目錄內",
     "err.scaffold_target_is_file": "目標路徑是檔案而非資料夾",
     "err.scaffold_parent_not_writable": "目標父目錄無寫入權限",
-    "err.scaffold_parent_not_writable_hint": "請改開坑到可寫入的資料夾，或以系統管理員執行",
+    "err.scaffold_parent_not_writable_hint": "請改選可寫入的資料夾，或以系統管理員執行",
     "err.import_by_source_not_supported": "依原版分檔不需寫回，請直接在 DefInjected XML 內修改",
     "msg.scaffold.duplicate_warning": "警告：{count} 個同類型同名 Def 重複",
     "msg.scaffold.collision_warning": "警告：{count} 項檔名可能混淆",

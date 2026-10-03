@@ -28,7 +28,7 @@
   "err.need_pending_file": "请选择待译档",
   "err.need_prefix": "请输入前缀",
   "err.scaffold_parent_not_writable": "目标父目录无写入权限",
-  "err.scaffold_parent_not_writable_hint": "请改开坑到可写入的文件夹，或以系统管理员执行",
+  "err.scaffold_parent_not_writable_hint": "请改选可写入的文件夹，或以系统管理员执行",
   "err.scaffold_target_inside_source": "目标不可位于来源 Mod 目录内",
   "err.scaffold_target_is_file": "目标路径是文件而非文件夹",
   "err.scaffold_target_same_as_source": "目标 Mod 必须与来源不同",
