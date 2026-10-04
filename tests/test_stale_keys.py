@@ -237,6 +237,32 @@ def test_inherited_def_keeps_child_type(tmp_path: Path):
     assert index.resolved(node)[0].tag == "AlienRace.ThingDef_AlienRace"
 
 
+ABSTRACT_WITH_DEFNAME = """<Defs>
+  <PawnKindDef Name="BaseCourier" Abstract="True">
+    <defName>Courier</defName>
+    <label>courier</label>
+  </PawnKindDef>
+  <PawnKindDef ParentName="BaseCourier"><defName>Courier_Colonist</defName></PawnKindDef>
+</Defs>"""
+
+
+def test_abstract_def_with_def_name_is_not_a_def(tmp_path: Path):
+    source = tmp_path / "source"
+    target = tmp_path / "target"
+    _write(source / "Defs" / "Kinds.xml", ABSTRACT_WITH_DEFNAME)
+    _write(
+        target / "Languages" / "ChineseTraditional" / "DefInjected" / "PawnKindDef" / "Kinds.xml",
+        "<LanguageData><Courier.label>信使</Courier.label></LanguageData>",
+    )
+    index = build_def_index([source / "Defs"])
+    assert index.candidates("Courier") == []
+    assert [name for _, name, _ in index.def_nodes()] == ["Courier_Colonist"]
+    pending, *_ = scan_pending(ProjectConfig(source, target, "ChineseTraditional"))
+    assert [(p.def_name, p.field, p.source_text) for p in pending] == [("Courier_Colonist", "label", "courier")]
+    result = run_check(ProjectConfig(source, target, "ChineseTraditional"))
+    assert result.stale_keys == ["PawnKindDef/Kinds.xml: Courier.label"]
+
+
 def test_fix_src_resolves_inherited_text(tmp_path: Path):
     source, target = _inherit_project(
         tmp_path,

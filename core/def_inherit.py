@@ -20,6 +20,8 @@ class DefIndex:
     def def_nodes(self) -> Iterator[tuple[Path, str, ET.Element]]:
         for def_file, nodes in self.files:
             for node in nodes:
+                if _is_abstract(node):
+                    continue
                 def_name = _def_name(node)
                 if def_name:
                     yield def_file, def_name, node
@@ -48,10 +50,16 @@ def build_def_index(defs_roots: list[Path]) -> DefIndex:
                 name_attr = node.get("Name")
                 if name_attr and name_attr not in index.named:
                     index.named[name_attr] = node
+                if _is_abstract(node):
+                    continue
                 def_name = _def_name(node)
                 if def_name:
                     index.by_name.setdefault(def_name, []).append((node.tag, node))
     return index
+
+
+def _is_abstract(node: ET.Element) -> bool:
+    return (node.get("Abstract") or "").strip().lower() == "true"
 
 
 def _def_name(node: ET.Element) -> str:
