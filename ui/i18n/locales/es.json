@@ -61,6 +61,7 @@
   "msg.export.bad_xml_skipped": "Advertencia: se omitió XML ilegible: {file}",
   "msg.export.done": "Se exportaron {count} entradas a {path}",
   "msg.export.har_skipped": "Se omitieron {count} claves técnicas HAR; no incluidas en el archivo pendiente",
+  "msg.export.stale_written": "{count} clave(s) de traducción ya no coinciden con el mod de origen y pueden estar obsoletas; lista guardada en {path}",
   "msg.fix_src.done": "Se corrigieron {count} comentario(s) SRC",
   "msg.import.done": "Escritas {written} · Actualizadas {updated} · Omitidas {skipped}",
   "msg.import.har_blocked": "Advertencia: se omitieron {count} traducciones de claves técnicas HAR (mantenga el texto fuente en inglés o los complementos pueden fallar)",

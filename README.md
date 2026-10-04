@@ -36,7 +36,7 @@ forge-ui
 3. **寫回** — 將待譯檔內容寫入目標資料夾的 `DefInjected`。
 
 - **維護現有語言包**：
-1. **檢查** — 選擇來源模組與目標資料夾，檢查缺翻，匯出 CSV 或 XML 待譯檔。
+1. **檢查** — 選擇來源模組與目標資料夾，檢查缺翻，匯出 CSV 或 XML 待譯檔。若有譯文在原模組已找不到對應，匯出時另寫 `DefInjected-missing.stale.txt` 清單供核對，確認後再手動刪除。
 2. 在外部編輯器填好譯文。
 3. **寫回** — 將待譯檔內容寫入目標資料夾的 `DefInjected`。
 
@@ -123,7 +123,7 @@ forge-ui
 ## Basic workflow
 
 1. **Scaffold** — Pick the source mod, target language, and output folder. Creates `About` and `Languages/.../DefInjected` skeleton.
-2. **Export** — Run a missing-translation check and export a CSV or XML pending file.
+2. **Export** — Run a missing-translation check and export a CSV or XML pending file. Translations whose keys no longer match the source mod are listed in `DefInjected-missing.stale.txt` for review; delete them manually once confirmed.
 3. Fill in translations in your editor.
 4. **Import** — Write translations back into the target mod's `DefInjected`.
 

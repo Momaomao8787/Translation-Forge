@@ -61,6 +61,7 @@
   "msg.export.bad_xml_skipped": "Warnung: Unlesbares XML übersprungen: {file}",
   "msg.export.done": "{count} Einträge nach {path} exportiert",
   "msg.export.har_skipped": "{count} HAR-Technikschlüssel übersprungen; nicht in Ausstehend-Datei enthalten",
+  "msg.export.stale_written": "{count} Übersetzungsschlüssel passen nicht mehr zum Quell-Mod und sind möglicherweise veraltet; Liste gespeichert unter {path}",
   "msg.fix_src.done": "{count} SRC-Kommentar(e) korrigiert",
   "msg.import.done": "Geschrieben {written} · Aktualisiert {updated} · Übersprungen {skipped}",
   "msg.import.har_blocked": "Warnung: {count} HAR-Technikschlüssel-Übersetzungen übersprungen (englische Quelle beibehalten, sonst können Addons brechen)",

@@ -16,6 +16,10 @@ def default_single_pending_path(target_mod: Path, fmt: str) -> Path:
     return Path(target_mod) / f"{DEFAULT_EXPORT_BASENAME}.{ext}"
 
 
+def default_stale_list_path(target_mod: Path) -> Path:
+    return Path(target_mod) / f"{DEFAULT_EXPORT_BASENAME}.stale.txt"
+
+
 def placeholder_text(mode: str, source_text: str) -> str:
     if mode == EXPORT_PLACEHOLDER_EMPTY:
         return ""

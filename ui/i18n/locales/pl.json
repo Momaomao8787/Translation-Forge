@@ -61,6 +61,7 @@
   "msg.export.bad_xml_skipped": "Warning: skipped unreadable XML: {file}",
   "msg.export.done": "Exported {count} entries to {path}",
   "msg.export.har_skipped": "Skipped {count} HAR technical keys; not included in pending file",
+  "msg.export.stale_written": "{count} translation key(s) no longer match the source mod and may be stale; list written to {path}",
   "msg.fix_src.done": "Fixed {count} SRC comment(s)",
   "msg.import.done": "Written {written} · Updated {updated} · Skipped {skipped}",
   "msg.import.har_blocked": "Warning: skipped {count} HAR technical key translations (keep English source or addons may break)",

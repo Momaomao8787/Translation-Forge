@@ -61,6 +61,7 @@
   "msg.export.bad_xml_skipped": "警告：読み取れない XML をスキップしました：{file}",
   "msg.export.done": "{count} 件を {path} にエクスポートしました",
   "msg.export.har_skipped": "{count} 件の HAR 技術キーをスキップしました。未翻訳ファイルには含まれません",
+  "msg.export.stale_written": "{count} 件の翻訳キーが元 Mod に一致せず、古くなっている可能性があります。一覧を {path} に保存しました",
   "msg.fix_src.done": "{count} 件の SRC コメントを修正しました",
   "msg.import.done": "書き込み {written} 件 · 更新 {updated} 件 · スキップ {skipped} 件",
   "msg.import.har_blocked": "警告：{count} 件の HAR 技術キー翻訳をスキップしました（英語ソースを保持しないとアドオンが壊れる場合があります）",

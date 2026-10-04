@@ -192,6 +192,17 @@ def scan_pending(config: ProjectConfig, allowed_fields: tuple[str, ...] = DEFAUL
     return pending, def_map, duplicate, collisions, defs_roots, har_skipped
 
 
+def find_project_stale_keys(config: ProjectConfig, defs_roots: list[Path]) -> list[str]:
+    source_mod = resolve_mod_path(config.source_mod, "err.specify_source_mod")
+    target_mod = resolve_mod_path(config.target_mod, "err.specify_target_mod")
+    version = resolve_game_version(config.game_version, target_mod, source_mod)
+    return find_stale_keys(
+        definjected_root(target_mod, config.target_lang),
+        build_def_index(defs_roots),
+        read_patch_text(discover_mod_subfolders(source_mod, "Patches", version)),
+    )
+
+
 def run_check(
     config: ProjectConfig,
     *,
@@ -228,11 +239,7 @@ def run_check(
         result.leaf_collisions = [f"{path}: {count}" for path, count in collisions]
         di_root = definjected_root(target_mod, config.target_lang)
         result.duplicate_tags = find_duplicate_tags(di_root)
-        result.stale_keys = find_stale_keys(
-            di_root,
-            build_def_index(defs_roots),
-            read_patch_text(discover_mod_subfolders(source_mod, "Patches", version)),
-        )
+        result.stale_keys = find_project_stale_keys(config, defs_roots)
         prefix = (import_prefix or "").strip()
         if not prefix:
             for ext in ("xml", "csv"):

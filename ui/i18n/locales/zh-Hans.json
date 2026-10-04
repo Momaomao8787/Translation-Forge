@@ -61,6 +61,7 @@
   "msg.export.bad_xml_skipped": "警告：略过无法读取的 XML：{file}",
   "msg.export.done": "已导出 {count} 条至 {path}",
   "msg.export.har_skipped": "已略过 {count} 条 HAR 技术键，未列入待译档",
+  "msg.export.stale_written": "另有 {count} 条译文在原模组找不到对应，可能已过时，清单已写入 {path}",
   "msg.fix_src.done": "已修正 {count} 条 SRC 注释",
   "msg.import.done": "新增 {written} 条 · 更新 {updated} 条 · 略过 {skipped} 条",
   "msg.import.har_blocked": "警告：略过 {count} 条 HAR 技术键译文（须保留英文原值，否则附加贴图可能失效）",

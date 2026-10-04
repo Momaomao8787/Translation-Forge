@@ -43,6 +43,7 @@ _ZH_FALLBACK: dict[str, str] = {
     "msg.export.bad_xml_skipped": "警告：略過無法讀取的 XML：{file}",
     "msg.export.done": "已匯出 {count} 條至 {path}",
     "msg.export.har_skipped": "已略過 {count} 條 HAR 技術鍵，未列入待譯檔",
+    "msg.export.stale_written": "另有 {count} 條譯文在原模組找不到對應，可能已過時，清單已寫入 {path}",
     "msg.import.har_blocked": "警告：略過 {count} 條 HAR 技術鍵譯文（須保留英文原值，否則附加貼圖可能失效）",
 }
 

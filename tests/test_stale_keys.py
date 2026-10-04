@@ -4,8 +4,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from core.def_inherit import build_def_index
+from core.export import run_export
 from core.fix_src import run_fix_src
-from core.models import ProjectConfig
+from core.models import EXPORT_LAYOUT_BY_SOURCE, ExportOptions, ProjectConfig
 from core.paths import discover_defs_roots, load_folders, resolve_game_version
 from core.scan import run_check, scan_pending
 from core.stale_keys import find_stale_keys
@@ -296,3 +297,21 @@ def test_run_check_reports_stale_keys_for_target_version(tmp_path: Path):
     _write(source / "1.5" / "Defs" / "b.xml", "<Defs><ThingDef><defName>Extra</defName><label>x</label></ThingDef></Defs>")
     pending, *_ = scan_pending(ProjectConfig(source, target, "ChineseTraditional", game_version="1.5"))
     assert [(p.def_name, p.field) for p in pending] == [("Extra", "label")]
+
+
+def test_export_writes_stale_list_and_removes_it_when_clean(tmp_path: Path):
+    source = tmp_path / "source"
+    target = tmp_path / "target"
+    gone = target / "Languages" / "ChineseTraditional" / "DefInjected" / "ThingDef" / "Gone.xml"
+    _write(source / "Defs" / "Things.xml", "<Defs><ThingDef><defName>Alpha</defName><label>alpha</label></ThingDef></Defs>")
+    _write(gone, "<LanguageData><Missing.label>消失</Missing.label></LanguageData>")
+    config = ProjectConfig(source, target, "ChineseTraditional")
+    stale_list = target / "DefInjected-missing.stale.txt"
+
+    result = run_export(config, ExportOptions())
+    assert stale_list.read_text(encoding="utf-8") == "ThingDef/Gone.xml: Missing.label\n"
+    assert ("msg.export.stale_written", {"count": 1, "path": str(stale_list)}) in result.warning_keys
+
+    gone.unlink()
+    run_export(config, ExportOptions(layout=EXPORT_LAYOUT_BY_SOURCE))
+    assert not stale_list.exists()

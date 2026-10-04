@@ -14,6 +14,7 @@ from core.definjected_write import (
 from core.errors import LocalizedError, add_result_message, add_result_warning, set_result_error, zh_fallback
 from core.export_merge import (
     default_single_pending_path,
+    default_stale_list_path,
     merge_pending_entries,
     placeholder_text,
 )
@@ -32,7 +33,7 @@ from core.models import (
 from core.har_field_rules import should_skip_from_pending
 from core.paths import definjected_root, normalize_path, resolve_mod_path
 from core.prefix import default_prefix
-from core.scan import scan_pending
+from core.scan import find_project_stale_keys, scan_pending
 from core.src_comment import format_src_comment
 
 
@@ -95,6 +96,17 @@ def _export_single_file(
         export_csv(output_path, pending)
     else:
         export_xml(output_path, pending)
+
+
+def _write_stale_list(result: ExportResult, config: ProjectConfig, defs_roots: list[Path]) -> None:
+    target_mod = resolve_mod_path(config.target_mod, "err.specify_target_mod")
+    path = default_stale_list_path(target_mod)
+    stale_keys = find_project_stale_keys(config, defs_roots)
+    if not stale_keys:
+        path.unlink(missing_ok=True)
+        return
+    path.write_text("\n".join(stale_keys) + "\n", encoding="utf-8")
+    add_result_warning(result, "msg.export.stale_written", count=len(stale_keys), path=str(path))
 
 
 def _run_export_by_source(
@@ -163,6 +175,7 @@ def _run_export_by_source(
         result.meta_path = ""
         for item in scan_warnings:
             add_result_warning(result, "msg.export.bad_xml_skipped", file=item)
+        _write_stale_list(result, config, defs_roots)
     except LocalizedError as e:
         set_result_error(result, e)
     except OSError as e:
@@ -219,6 +232,7 @@ def run_export(
         add_result_message(result, "msg.export.done", count=len(merged), path=str(out))
         if har_skipped > 0:
             add_result_message(result, "msg.export.har_skipped", count=har_skipped)
+        _write_stale_list(result, config, defs_roots)
     except LocalizedError as e:
         set_result_error(result, e)
     except OSError as e:
