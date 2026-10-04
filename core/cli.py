@@ -6,6 +6,7 @@ import sys
 from dataclasses import asdict, replace
 from pathlib import Path
 
+from core.errors import format_warning
 from core.export import run_export
 from core.export_merge import default_single_pending_path
 from core.fix_src import run_fix_src
@@ -62,7 +63,7 @@ def _localize_result(result, locale: str | None):
         updates["messages"] = [tr.t(key, **params) for key, params in message_keys]
     warning_keys = getattr(result, "warning_keys", None)
     if warning_keys:
-        updates["warnings"] = [tr.t(key, **params) for key, params in warning_keys]
+        updates["warnings"] = [format_warning(tr.t, key, params) for key, params in warning_keys]
     if updates:
         return replace(result, **updates)
     return result

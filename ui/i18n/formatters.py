@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from core.errors import format_warning
 from ui.i18n.translator import Translator
 
 
@@ -17,11 +18,14 @@ def format_error(result, tr: Translator) -> str:
 
 
 def format_check_messages(result, tr: Translator) -> str:
-    lines: list[str] = []
     if result.message_keys:
-        lines.extend(tr.t(key, **params) for key, params in result.message_keys)
-    elif result.messages:
-        lines.extend(result.messages)
-    if getattr(result, "warning_keys", None):
-        lines.extend(tr.t(key, **params) for key, params in result.warning_keys)
+        messages = [tr.t(key, **params) for key, params in result.message_keys]
+    else:
+        messages = list(result.messages)
+    lines = [tr.t("msg.check.heading_result")]
+    lines.extend(f"• {text}" for text in messages)
+    warnings = [format_warning(tr.t, key, params) for key, params in getattr(result, "warning_keys", [])]
+    if warnings:
+        lines.extend(["", tr.t("msg.check.heading_warnings")])
+        lines.extend(f"• {text}" for text in warnings)
     return "\n".join(lines)

@@ -129,6 +129,7 @@ class CheckResult:
     write_strategy_mix: list[str] = field(default_factory=list)
     strategy_hints: list[str] = field(default_factory=list)
     messages: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     message_keys: list[tuple[str, dict]] = field(default_factory=list)
     warning_keys: list[tuple[str, dict]] = field(default_factory=list)
     error: str = ""

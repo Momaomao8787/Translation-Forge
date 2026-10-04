@@ -80,7 +80,7 @@ def build_def_map(
         source_rel = _source_rel(def_file, source_mod)
         key = _def_key(node.tag, def_name)
         if key in def_map:
-            duplicate.append(f"{_format_duplicate(node.tag, def_name)} ← 略過 {source_rel}")
+            duplicate.append(f"{_format_duplicate(node.tag, def_name)}: {source_rel}")
             continue
         def_map[key] = DefRecord(
             def_name=def_name,
@@ -118,18 +118,16 @@ def build_tr_map(definjected: Path) -> dict[str, set[str]]:
     return tr_map
 
 
-def find_leaf_collisions(def_map: dict[tuple[str, str], DefRecord]) -> list[str]:
-    by_type_leaf: dict[tuple[str, str], list[str]] = {}
+def find_leaf_collisions(def_map: dict[tuple[str, str], DefRecord]) -> list[tuple[str, int]]:
+    by_type_leaf: dict[tuple[str, str], set[str]] = {}
     for rec in def_map.values():
         key = (rec.def_type, rec.source_def_file)
-        by_type_leaf.setdefault(key, []).append(rec.source_rel)
-    collisions = []
-    for (def_type, leaf), sources in by_type_leaf.items():
-        if len(set(sources)) > 1:
-            collisions.append(
-                f"{def_type} 的 {leaf} 對應 {len(set(sources))} 個不同來源 Def 檔"
-            )
-    return collisions
+        by_type_leaf.setdefault(key, set()).add(rec.source_rel)
+    return [
+        (f"{def_type}/{leaf}", len(sources))
+        for (def_type, leaf), sources in by_type_leaf.items()
+        if len(sources) > 1
+    ]
 
 
 def _translated_index_paths(def_elem: ET.Element | None, def_type: str, fields: set[str]) -> set[str]:
@@ -140,13 +138,18 @@ def _translated_index_paths(def_elem: ET.Element | None, def_type: str, fields: 
     return paths
 
 
-def _warning_preview(items: list[str], limit: int = 2) -> str:
-    if not items:
-        return ""
-    preview = "；".join(items[:limit])
-    if len(items) > limit:
-        preview += f"；…共 {len(items)} 項"
-    return preview
+def _details(items: list, limit: int = 2) -> dict:
+    return {"items": list(items[:limit]), "more": max(len(items) - limit, 0)}
+
+
+def stale_key_item(stale_key: str) -> str:
+    key = stale_key.split(": ", 1)[-1]
+    parts = key.split(".")
+    if parts[-1] == "slateRef":
+        parts = parts[:-1]
+    if len(parts) <= 3:
+        return ".".join(parts)
+    return f"{parts[0]} … {parts[-2]}.{parts[-1]}"
 
 
 def scan_pending(config: ProjectConfig, allowed_fields: tuple[str, ...] = DEFAULT_FIELDS) -> tuple[list[PendingEntry], dict[tuple[str, str], DefRecord], list[str], list[str], list[Path], int]:
@@ -222,7 +225,7 @@ def run_check(
         result.har_skipped_count = har_skipped
         result.pending_count = len(pending)
         result.duplicate_def_names = duplicate
-        result.leaf_collisions = collisions
+        result.leaf_collisions = [f"{path}: {count}" for path, count in collisions]
         di_root = definjected_root(target_mod, config.target_lang)
         result.duplicate_tags = find_duplicate_tags(di_root)
         result.stale_keys = find_stale_keys(
@@ -243,39 +246,31 @@ def run_check(
                     except (FileNotFoundError, OSError, ValueError):
                         pass
         result.write_strategy_mix = find_write_strategy_mix(di_root, prefix)
-        add_result_message(result, "msg.check.def_records", count=result.def_record_count)
         add_result_message(result, "msg.check.pending", count=len(pending))
+        add_result_message(result, "msg.check.def_records", count=result.def_record_count, roots=len(defs_roots))
         if har_skipped > 0:
             add_result_message(result, "msg.check.har_skipped", count=har_skipped)
-        if len(defs_roots) > 1:
-            add_result_message(result, "msg.check.defs_roots", count=len(defs_roots))
         if result.lang_will_create:
             add_result_message(result, "msg.check.lang_will_create", lang=config.target_lang)
         if duplicate:
-            add_result_message(result, "msg.check.duplicate_warning", count=len(duplicate))
-            preview = _warning_preview(duplicate)
-            if preview:
-                add_result_message(result, "msg.check.warning_preview", preview=preview)
+            add_result_warning(result, "msg.check.duplicate_warning", count=len(duplicate), **_details(duplicate))
         if collisions:
-            add_result_message(result, "msg.check.collision_warning", count=len(collisions))
-            preview = _warning_preview(collisions)
-            if preview:
-                add_result_message(result, "msg.check.warning_preview", preview=preview)
+            collision_items = [("msg.check.collision_item", {"file": path, "count": count}) for path, count in collisions]
+            add_result_warning(result, "msg.check.collision_warning", count=len(collisions), **_details(collision_items))
         if result.duplicate_tags:
-            add_result_warning(result, "msg.check.duplicate_tags", count=len(result.duplicate_tags))
-            preview = _warning_preview(result.duplicate_tags)
-            if preview:
-                add_result_warning(result, "msg.check.warning_preview", preview=preview)
+            add_result_warning(
+                result, "msg.check.duplicate_tags", count=len(result.duplicate_tags), **_details(result.duplicate_tags)
+            )
         if result.stale_keys:
-            add_result_warning(result, "msg.check.stale_keys", count=len(result.stale_keys))
-            preview = _warning_preview(result.stale_keys)
-            if preview:
-                add_result_warning(result, "msg.check.warning_preview", preview=preview)
+            stale_items = [stale_key_item(key) for key in result.stale_keys]
+            add_result_warning(result, "msg.check.stale_keys", count=len(result.stale_keys), **_details(stale_items))
         if result.write_strategy_mix:
-            add_result_warning(result, "msg.check.write_strategy_mix", count=len(result.write_strategy_mix))
-            preview = _warning_preview(result.write_strategy_mix)
-            if preview:
-                add_result_warning(result, "msg.check.warning_preview", preview=preview)
+            add_result_warning(
+                result,
+                "msg.check.write_strategy_mix",
+                count=len(result.write_strategy_mix),
+                **_details(result.write_strategy_mix),
+            )
         if find_pending_format_mix(target_mod):
             add_result_warning(result, "msg.check.pending_format_mix")
         if ui_import_mode:

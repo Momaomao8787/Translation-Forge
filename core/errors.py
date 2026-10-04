@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable
+
 _ZH_FALLBACK: dict[str, str] = {
     "err.specify_source_mod": "請指定來源 Mod",
     "err.specify_target_mod": "請指定目標 Mod",
@@ -22,19 +24,21 @@ _ZH_FALLBACK: dict[str, str] = {
     "msg.scaffold.collision_warning": "警告：{count} 項檔名可能混淆",
     "msg.scaffold.existing_lang": "警告：已存在語言路徑 {path}，將僅補缺",
     "msg.check.scanned_defs": "已掃描 {count} 處 Defs",
-    "msg.check.def_records": "共掃描 {count} 個 Def",
+    "msg.check.heading_result": "檢查結果",
+    "msg.check.heading_warnings": "警告",
+    "msg.check.def_records": "掃描 {count} 個 Def，來自 {roots} 個 Defs 資料夾",
     "msg.check.pending": "尚待翻譯 {count} 條",
-    "msg.check.har_skipped": "已略過 {count} 條 HAR 技術鍵（著色通道、附加部位識別碼等，勿翻譯）",
-    "msg.check.defs_roots": "Defs 根目錄 {count} 處",
-    "msg.check.lang_will_create": "寫回時將建立 Languages/{lang}/",
-    "msg.check.duplicate_warning": "警告：{count} 個同類型同名 Def 重複，匯出只保留先掃到的定義",
-    "msg.check.collision_warning": "警告：{count} 項寫回檔名可能混淆（同一 DefType 內多個來源共用 leaf 檔名）",
-    "msg.check.warning_preview": "{preview}",
-    "msg.check.duplicate_tags": "警告：{count} 個 DefInjected 檔內有重複 tag",
-    "msg.check.stale_keys": "警告：{count} 條 DefInjected 鍵在原版找不到對應 Def 或欄位，可能已過時",
-    "msg.check.write_strategy_mix": "警告：{count} 個 tag 同時出現於前綴檔與非前綴檔",
-    "msg.check.strategy_hint": "警告：目前選的寫回方式與匯出待譯檔時不同，請確認後再寫入",
-    "msg.check.pending_format_mix": "警告：同時存在 CSV 與 XML 待譯檔，請勿混用格式",
+    "msg.check.har_skipped": "略過 {count} 條 HAR 技術欄位，不需翻譯",
+    "msg.check.lang_will_create": "寫入時會建立 Languages/{lang}/",
+    "msg.check.duplicate_warning": "{count} 個同類型 Def 名稱重複，匯出只保留先掃到的一個",
+    "msg.check.collision_warning": "{count} 個寫回檔案由多個來源共用",
+    "msg.check.collision_item": "{file}：{count} 個來源",
+    "msg.check.duplicate_tags": "{count} 個譯文鍵在同一檔案內重複",
+    "msg.check.stale_keys": "{count} 條譯文在原模組找不到對應，可能已過時",
+    "msg.check.write_strategy_mix": "{count} 個譯文鍵同時出現在有前綴與無前綴的檔案",
+    "msg.check.strategy_hint": "目前選的寫回方式與匯出待譯檔時不同，請確認後再寫入",
+    "msg.check.pending_format_mix": "同時存在 CSV 與 XML 待譯檔，請勿混用格式",
+    "msg.check.more_items": "另 {count} 條",
     "msg.scaffold.existing_about": "警告：已存在 About.xml，建立時可能覆寫",
     "msg.export.bad_xml_skipped": "警告：略過無法讀取的 XML：{file}",
     "msg.export.done": "已匯出 {count} 條至 {path}",
@@ -72,7 +76,18 @@ def add_result_message(result, key: str, **params: object) -> None:
 def add_result_warning(result, key: str, **params: object) -> None:
     result.warning_keys.append((key, dict(params)))
     if hasattr(result, "warnings"):
-        result.warnings.append(zh_fallback(key, **params))
+        result.warnings.append(format_warning(zh_fallback, key, params))
+
+
+def format_warning(translate: Callable[..., str], key: str, params: dict) -> str:
+    lines = [translate(key, **params)]
+    for item in params.get("items", ()):
+        text = translate(item[0], **item[1]) if isinstance(item, tuple) else str(item)
+        lines.append(f"  - {text}")
+    more = params.get("more", 0)
+    if more:
+        lines.append(f"  - {translate('msg.check.more_items', count=more)}")
+    return "\n".join(lines)
 
 
 def format_error_with_hints(result, tr=None) -> str:
